@@ -52,7 +52,7 @@ const EmailThreadList: React.FC<EmailThreadListProps> = ({
       )}
 
       {/* Display each email in the thread */}
-      <div className="w-full">
+      <div className="w-full pt-2">
         {threadEmails.map((email, index) => {
           const isExpanded = expandedRecipients.has(email.id);
           const isReplying = email.id && replyingToId === email.id;
