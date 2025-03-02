@@ -12,9 +12,11 @@ interface EmailThreadListProps {
   loading: boolean;
   error: string | null;
   onReplySuccess?: () => void;
+  onDeleteSuccess?: () => void;
   replyingToId: string | null;
   setReplyingToId: (id: string | null) => void;
   onReply?: () => void;
+  onForward?: (email: EmailDetails) => void;
 }
 
 const EmailThreadList: React.FC<EmailThreadListProps> = ({
@@ -25,15 +27,31 @@ const EmailThreadList: React.FC<EmailThreadListProps> = ({
   loading,
   error,
   onReplySuccess,
+  onDeleteSuccess,
   replyingToId,
   setReplyingToId,
   onReply,
+  onForward,
 }) => {
   // Handle starting a reply to an email
   const handleReply = (emailId: string) => {
     setReplyingToId(emailId);
     if (onReply) {
       onReply();
+    }
+  };
+
+  // Handle forwarding an email
+  const handleForward = (email: EmailDetails) => {
+    if (onForward) {
+      onForward(email);
+    }
+  };
+
+  // Handle deleting an email
+  const handleDelete = () => {
+    if (onDeleteSuccess) {
+      onDeleteSuccess();
     }
   };
 
@@ -94,6 +112,8 @@ const EmailThreadList: React.FC<EmailThreadListProps> = ({
                     <EmailActions
                       email={email}
                       onReply={() => handleReply(email.id)}
+                      onForward={() => handleForward(email)}
+                      onDelete={handleDelete}
                     />
                   </div>
                 )}

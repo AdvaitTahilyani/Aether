@@ -409,6 +409,27 @@ function EmailViewer({ selectedEmail, userEmail = "user@example.com", onClearSel
     setShowReplyForm(false);
   };
 
+  // Handle forwarding an email
+  const handleForward = (email: EmailDetails) => {
+    if (email && email.id) {
+      setShowReplyForm(true);
+      // We're not setting replyingToId here because it's not a reply
+    }
+  };
+
+  // Handle email deletion success
+  const handleDeleteSuccess = () => {
+    // Clear the selected email to show the default screen
+    if (onClearSelection) {
+      onClearSelection();
+    } else {
+      // If no callback is provided, just clear local state
+      setThreadEmails([]);
+      setLoading(false);
+      setError(null);
+    }
+  };
+
   if (!selectedEmail) {
     return (
       <div className="h-full flex items-center justify-center p-8 bg-white text-gray-500">
@@ -615,22 +636,31 @@ function EmailViewer({ selectedEmail, userEmail = "user@example.com", onClearSel
           loading={loading}
           error={error}
           onReplySuccess={handleReplySuccess}
+          onDeleteSuccess={handleDeleteSuccess}
           replyingToId={replyingToId}
           setReplyingToId={setReplyingToId}
           onReply={handleReply}
+          onForward={handleForward}
         />
       </div>
 
-      {/* Reply Form Modal */}
-      {showReplyForm && replyingToId && (
+      {/* Reply/Forward Form Modal */}
+      {showReplyForm && (
         <ComposeEmail
           userEmail={userEmail}
           onClose={handleCancelReply}
           onSent={handleReplySuccess}
-          isReply={true}
-          replyToEmail={threadEmails.find(email => email.id === replyingToId) || selectedEmail}
-          replyToSubject={getEmailSubject(threadEmails.find(email => email.id === replyingToId) || selectedEmail)}
-          replyToAddress={parseEmailAddress(getEmailSender(threadEmails.find(email => email.id === replyingToId) || selectedEmail)).email}
+          isReply={replyingToId !== null}
+          isForward={replyingToId === null && showReplyForm}
+          replyToEmail={replyingToId 
+            ? threadEmails.find(email => email.id === replyingToId) || selectedEmail 
+            : threadEmails[0] || selectedEmail}
+          replyToSubject={replyingToId 
+            ? getEmailSubject(threadEmails.find(email => email.id === replyingToId) || selectedEmail)
+            : getEmailSubject(threadEmails[0] || selectedEmail)}
+          replyToAddress={replyingToId 
+            ? parseEmailAddress(getEmailSender(threadEmails.find(email => email.id === replyingToId) || selectedEmail)).email
+            : parseEmailAddress(getEmailSender(threadEmails[0] || selectedEmail)).email}
         />
       )}
     </div>

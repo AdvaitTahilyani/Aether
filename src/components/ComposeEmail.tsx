@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { isElectronAPIAvailable } from "../services";
 import { EmailDetails } from "../types";
-import { getEmailSender, getEmailSubject, parseEmailAddress } from "../services";
+import { getEmailSender, getEmailSubject, parseEmailAddress, getEmailRecipients } from "../services";
 import AutoReplyGenerator from "./AutoReplyGenerator";
 
 interface ComposeEmailProps {
@@ -13,6 +13,8 @@ interface ComposeEmailProps {
   replyToEmail?: EmailDetails;
   replyToSubject?: string;
   replyToAddress?: string;
+  // Forward-specific props
+  isForward?: boolean;
 }
 
 const ComposeEmail: React.FC<ComposeEmailProps> = ({
@@ -23,6 +25,7 @@ const ComposeEmail: React.FC<ComposeEmailProps> = ({
   replyToEmail,
   replyToSubject,
   replyToAddress,
+  isForward = false,
 }) => {
   const [to, setTo] = useState(isReply && replyToAddress ? replyToAddress : '');
   const [cc, setCc] = useState<string>("");
@@ -30,7 +33,11 @@ const ComposeEmail: React.FC<ComposeEmailProps> = ({
   const [showCc, setShowCc] = useState<boolean>(false);
   const [showBcc, setShowBcc] = useState<boolean>(false);
   const [subject, setSubject] = useState(
-    isReply && replyToSubject ? `Re: ${replyToSubject}` : ''
+    isReply && replyToSubject 
+      ? `Re: ${replyToSubject.replace(/^Re: /i, '')}` 
+      : isForward && replyToSubject 
+        ? `Fwd: ${replyToSubject.replace(/^Fwd: /i, '')}` 
+        : ''
   );
   const [body, setBody] = useState<string>("");
   const [suggestedReply, setSuggestedReply] = useState<string | null>(null);
@@ -46,9 +53,9 @@ const ComposeEmail: React.FC<ComposeEmailProps> = ({
     return `auto-reply-${emailId}`;
   };
 
-  // Initialize fields for reply
+  // Initialize fields for reply or forward
   useEffect(() => {
-    if (isReply && replyToEmail) {
+    if ((isReply || isForward) && replyToEmail) {
       // Get recipient information from the original email
       const sender = getEmailSender(replyToEmail);
       console.log("Original sender string:", sender);
@@ -76,20 +83,52 @@ const ComposeEmail: React.FC<ComposeEmailProps> = ({
 
       console.log("Final recipient email:", recipientEmail);
       
-      // Set the recipient
-      setTo(recipientEmail);
+      // Set the recipient for reply only, not for forward
+      if (isReply) {
+        setTo(recipientEmail);
+      }
       
-      // Set the subject with Re: prefix if it doesn't already have one
+      // Set the subject with appropriate prefix
       const originalSubject = getEmailSubject(replyToEmail);
-      const replySubject = originalSubject.startsWith("Re:") 
-        ? originalSubject 
-        : `Re: ${originalSubject}`;
-      setSubject(replySubject);
+      let newSubject = originalSubject;
+      
+      if (isReply) {
+        newSubject = originalSubject.startsWith("Re:") 
+          ? originalSubject 
+          : `Re: ${originalSubject}`;
+      } else if (isForward) {
+        newSubject = originalSubject.startsWith("Fwd:") 
+          ? originalSubject 
+          : `Fwd: ${originalSubject}`;
+      }
+      
+      setSubject(newSubject);
+
+      // For forwarding, include the original email content
+      if (isForward) {
+        const originalSender = getEmailSender(replyToEmail);
+        const originalDate = replyToEmail.internalDate 
+          ? new Date(parseInt(replyToEmail.internalDate)).toLocaleString() 
+          : "Unknown date";
+        
+        const forwardedContent = `
+---------- Forwarded message ---------
+From: ${originalSender}
+Date: ${originalDate}
+Subject: ${originalSubject}
+To: ${getEmailRecipients(replyToEmail).join(", ")}
+
+${replyToEmail.snippet || ""}
+`;
+        setBody(forwardedContent);
+      }
 
       // Check for stored reply
-      checkStoredReply();
+      if (isReply) {
+        checkStoredReply();
+      }
     }
-  }, [isReply, replyToEmail]);
+  }, [isReply, isForward, replyToEmail]);
 
   // Check if a stored reply exists for this email
   const checkStoredReply = async () => {
