@@ -56,7 +56,7 @@ const EmailThreadList: React.FC<EmailThreadListProps> = ({
   };
 
   return (
-    <div className="flex-1 overflow-auto h-full">
+    <div className="h-full overflow-auto">
       {loading && (
         <div className="flex justify-center items-center h-16 py-4">
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
@@ -75,7 +75,7 @@ const EmailThreadList: React.FC<EmailThreadListProps> = ({
       )}
 
       {/* Display each email in the thread */}
-      <div className="w-full pt-3 space-y-4">
+      <div className="w-full pt-4 pb-6 space-y-4">
         {threadEmails.map((email, index) => {
           const isExpanded = expandedRecipients.has(email.id);
           const isReplying = email.id && replyingToId === email.id;

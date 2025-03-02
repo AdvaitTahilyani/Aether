@@ -104,7 +104,8 @@ const EmailBody: React.FC<EmailBodyProps> = ({
         const contentHeight = Math.max(bodyHeight, htmlHeight);
         
         // Set a reasonable maximum height to prevent excessive scrolling
-        const maxHeight = Math.min(contentHeight, window.innerHeight * 0.7);
+        // Limit to 60% of viewport height to ensure we don't create excessive scrolling
+        const maxHeight = Math.min(contentHeight, window.innerHeight * 0.6);
         setIframeHeight(maxHeight);
       } catch (error) {
         console.error("Error adjusting iframe height:", error);
@@ -157,6 +158,7 @@ const EmailBody: React.FC<EmailBodyProps> = ({
         style={{
           height: iframeHeight > 0 ? `${iframeHeight}px` : 'auto',
           minHeight: '100px', // Provide a minimum height
+          maxHeight: '60vh', // Limit maximum height to 60% of viewport height
           width: "100%",
           overflow: "auto",
           margin: 0,
