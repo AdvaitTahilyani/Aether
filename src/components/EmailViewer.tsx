@@ -538,8 +538,8 @@ function EmailViewer({ selectedEmail, userEmail = "user@example.com", onClearSel
       {/* Background auto-reply generator */}
       {backgroundAutoReplyGenerator()}
       
-      {/* Fixed header with the most recent subject and reply button */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm flex-shrink-0">
+      {/* Header with the most recent subject and reply button - removed sticky positioning */}
+      <div className="bg-white border-b border-gray-200 shadow-sm flex-shrink-0">
         <div className="flex justify-between items-center px-4 py-2">
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-bold text-black tracking-tight truncate">
