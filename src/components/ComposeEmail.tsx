@@ -3,7 +3,6 @@ import { isElectronAPIAvailable } from "../services";
 import { EmailDetails } from "../types";
 import { getEmailSender, getEmailSubject, parseEmailAddress } from "../services";
 import AutoReplyGenerator from "./AutoReplyGenerator";
-import { sendEmail } from '../services/emailService';
 
 interface ComposeEmailProps {
   userEmail?: string;
@@ -146,14 +145,24 @@ const ComposeEmail: React.FC<ComposeEmailProps> = ({
     setSending(true);
 
     try {
-      await sendEmail({
-        from: userEmail || 'user@example.com',
+      // Use the Electron API to send emails instead of the mock function
+      if (!isElectronAPIAvailable() || !window.electronAPI?.sendEmail) {
+        throw new Error("Email sending functionality is not available");
+      }
+
+      const result = await window.electronAPI.sendEmail({
         to,
         cc: showCc ? cc : undefined,
         bcc: showBcc ? bcc : undefined,
         subject,
         body,
+        isHtml: false, // Set to true if you want to send HTML emails
+        threadId: isReply && replyToEmail ? replyToEmail.threadId : undefined
       });
+
+      if (!result || !result.success) {
+        throw new Error("Failed to send email");
+      }
 
       setSending(false);
       if (onSent) {
