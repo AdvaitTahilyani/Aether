@@ -1,0 +1,22 @@
+/* Draggable region for Electron app */
+
+.titlebar-drag-region {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  -webkit-app-region: drag;
+  z-index: 9999;
+  pointer-events: none; /* Allow clicks to pass through to elements below */
+}
+
+/* Make sure buttons and interactive elements in the titlebar are not draggable */
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Ensure the app container has proper padding for the titlebar */
+.app-container {
+  padding-top: 32px;
+}

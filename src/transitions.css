@@ -1,0 +1,532 @@
+/* src/index.css */
+
+/* Smooth transitions for window resizing and fullscreen */
+html,
+body,
+#root,
+.app-container {
+  transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* Ensure smooth fullscreen transitions */
+:fullscreen,
+:-webkit-full-screen {
+  transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* Optimize content scaling */
+* {
+  transform-origin: center center;
+  box-sizing: border-box; /* Ensure consistent sizing */
+}
+
+/* Optimize animations for users who prefer motion */
+@media (prefers-reduced-motion: no-preference) {
+  html,
+  body,
+  #root,
+  .app-container {
+    will-change: transform, opacity;
+  }
+}
+
+/* Fade-in animation for dropdowns or dynamic elements */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+/* Email container styling */
+.email-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Full viewport height */
+}
+
+/* Email content styling */
+.email-content {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  line-height: 1.6;
+  font-size: 15px;
+  width: 100%;
+  margin: 0;
+  color: #000000;
+  background-color: transparent !important;
+}
+
+/* Center and constrain images */
+.email-content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 10px auto;
+}
+
+/* Style tables */
+.email-content table {
+  border-collapse: collapse;
+  max-width: 100%;
+  margin: 10px auto;
+}
+
+/* Remove borders and backgrounds from table cells */
+.email-content td,
+.email-content th {
+  padding: 4px 8px;
+  border: none;
+}
+
+/* Style links */
+.email-content a {
+  color: #0066cc;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.email-content a:hover {
+  text-decoration: underline;
+}
+
+/* Quoted content styling (Gmail-like) */
+.email-content blockquote,
+.email-content .gmail_quote {
+  margin: 10px 0;
+  padding-left: 15px;
+  color: #5f6368; /* Gmail's quote gray */
+}
+
+/* Quote headers */
+.email-content .gmail_quote_header,
+.email-content div[style*="color: #909090"] {
+  color: #5f6368;
+  font-style: italic;
+  margin-top: 15px;
+  padding: 5px 0;
+}
+
+/* Gmail-specific classes */
+.email-content .gmail_attr,
+.email-content .gmail_extra,
+.email-content .gmail_signature {
+  color: #5f6368;
+  font-size: 0.9em;
+}
+
+.email-content .gmail_signature {
+  margin-top: 15px;
+  padding-top: 10px;
+}
+
+/* Paragraphs and spacing */
+.email-content p {
+  margin: 0.8em 0;
+  line-height: 1.6;
+  background-color: transparent !important;
+  color: #000000;
+}
+
+/* Lists */
+.email-content ul,
+.email-content ol {
+  padding-left: 20px;
+  margin: 0.5em 0;
+}
+
+/* Headings */
+.email-content h1,
+.email-content h2,
+.email-content h3,
+.email-content h4,
+.email-content h5,
+.email-content h6 {
+  margin: 1.2em 0 0.8em;
+  color: #000000;
+  font-weight: 600;
+  background-color: transparent !important;
+}
+
+/* Horizontal rules */
+.email-content hr {
+  margin: 1em 0;
+  border: none;
+  height: 1px;
+  background-color: #e0e0e0;
+}
+
+/* Code blocks */
+.email-content pre {
+  padding: 1em;
+  overflow-x: auto;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.email-content code {
+  padding: 0.2em 0.4em;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+/* Email metadata styling */
+.email-metadata {
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 15px;
+}
+
+.email-metadata-row {
+  display: flex;
+  margin-bottom: 4px;
+}
+
+.email-metadata-label {
+  font-weight: 500;
+  width: 60px;
+  color: #000000;
+}
+
+.email-metadata-value {
+  flex: 1;
+  color: #000000;
+  font-weight: 500;
+}
+
+.email-recipient {
+  margin-bottom: 2px;
+}
+
+.email-recipient-name {
+  font-weight: 500;
+  color: #000000;
+}
+
+.email-recipient-email {
+  color: #5f6368;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .email-content {
+    font-size: 13px;
+    padding: 12px;
+  }
+
+  .email-metadata {
+    padding: 8px;
+  }
+}
+
+/* Transition animations */
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Slide up animation */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.4s ease-out;
+}
+
+/* Slide in from right animation */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.3s ease-out;
+}
+
+/* Pulse animation */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Scale animation */
+@keyframes scale {
+  from {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-scale {
+  animation: scale 0.3s ease-out;
+}
+
+/* Global transition settings */
+* {
+  transition-property: background-color, border-color, color, fill, stroke,
+    opacity, box-shadow, transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Page transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.page-exit {
+  opacity: 1;
+}
+
+.page-exit-active {
+  opacity: 0;
+  transition: opacity 300ms;
+}
+
+/* Delete animation */
+@keyframes delete-animation {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+.deleting-email {
+  animation: delete-animation 0.5s ease-in-out forwards;
+}
+
+/* Add animation for filter panel */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+/* Selected email glow effect */
+.selected-email-glow {
+  position: relative;
+  z-index: 50 !important;
+  transform-origin: center;
+}
+
+.selected-email-glow::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 8px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(120, 180, 255, 0.8) 25%,
+    rgba(143, 143, 255, 0.7) 50%,
+    rgba(186, 143, 255, 0.8) 75%,
+    rgba(255, 255, 255, 0.9) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: borderGlow 2s infinite alternate;
+  z-index: -1;
+}
+
+@keyframes borderGlow {
+  0% {
+    opacity: 0.7;
+    filter: blur(1.5px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(2px);
+  }
+}
+
+/* Improve transition for email items */
+.email-item {
+  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+  margin: 4px 0;
+  border-radius: 6px;
+  overflow: visible;
+}
+
+.email-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Selected email extension effect */
+.selected-email-extend {
+  width: 103%;
+  margin-left: -1.5%;
+  position: relative;
+  border-radius: 6px;
+  transform-origin: center !important;
+  box-shadow: 0 5px 15px rgba(255, 255, 255, 0.15) !important;
+  z-index: 50 !important;
+}
+
+/* Make sure all parent containers allow overflow */
+.overflow-auto,
+.overflow-hidden,
+.flex-1,
+.w-1,
+.border-r,
+.flex {
+  overflow: visible !important;
+}
+
+/* Ensure the email list container allows overflow */
+.email-list-container {
+  overflow: visible !important;
+  position: relative;
+}
+
+/* Make the email list properly scrollable */
+.email-list-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  height: 100%;
+  max-height: calc(100vh - 200px);
+}
+
+.email-list-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.email-list-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.email-list-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+/* Resize handle styling */
+.cursor-col-resize {
+  cursor: col-resize;
+}
+
+/* Selected email styling that works with resizable columns */
+.selected-email-glow {
+  position: relative;
+  z-index: 10;
+  transform-origin: center;
+  width: 100%; /* Ensure it fills the container width */
+  max-width: 100%; /* Prevent overflow */
+}
+
+/* Ensure the email item container adapts to width changes */
+.email-item {
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+  margin: 2px 0;
+  border-radius: 4px;
+  width: 100%;
+}
+
+/* Ensure the email content adapts to width changes */
+.email-item > div {
+  width: 100%;
+}
+
+/* Email content styles */
+.email-body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  line-height: 1.6;
+  color: #333;
+}
+
+.email-body img {
+  max-width: 100%;
+  height: auto;
+}
+
+.email-body a {
+  color: #2563eb;
+}
+
+.email-body pre,
+.email-body code {
+  white-space: pre-wrap;
+  background-color: #f5f5f5;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: monospace;
+}

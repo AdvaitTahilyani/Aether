@@ -1,0 +1,77 @@
+# Node dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+
+# Build outputs
+dist/
+dist-electron/
+build/
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+server/venv/
+server/.venv/
+server/env/
+server/.env/
+
+# Server directories that should be created locally
+server/uploads/
+server/transcripts/
+server/summaries/
+server/logs/
+server/temp/
+server/whisper_models/
+server/models/
+
+# Large model files and caches
+*.gguf
+*.bin
+*.onnx
+*.pt
+*.pth
+*.model
+*.weights
+**/huggingface/
+**/cache/
+**/.cache/
+**/ollama/
+**/models/
+**/__pycache__/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Temporary files
+*.tmp
+
+# Large data files
+*.csv
+*.xlsx
+*.db
+*.sqlite
+*.sqlite3

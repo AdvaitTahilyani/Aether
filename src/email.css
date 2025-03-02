@@ -1,0 +1,87 @@
+/* Email-specific styling */
+
+.email-metadata-row {
+  display: flex;
+  margin-bottom: 0.75rem;
+  padding-left: 0.5rem;
+}
+
+.email-metadata-label {
+  width: 5rem;
+  font-weight: 500;
+  color: #4b5563;
+  flex-shrink: 0;
+}
+
+.email-metadata-value {
+  flex: 1;
+}
+
+.email-recipient {
+  margin-bottom: 0.25rem;
+}
+
+.email-recipient-name {
+  font-weight: 500;
+}
+
+.email-recipient-email {
+  color: #6b7280;
+}
+
+.email-content {
+  font-family: "Epilogue", sans-serif;
+  line-height: 1.7;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background-color: #f9fafb;
+  margin-top: 1.5rem;
+}
+
+.email-content a {
+  color: #4f46e5;
+  text-decoration: none;
+}
+
+.email-content a:hover {
+  text-decoration: underline;
+}
+
+.email-content blockquote {
+  border-left: 3px solid #d1d5db;
+  padding-left: 1rem;
+  color: #6b7280;
+  margin: 1rem 0;
+}
+
+.enhanced-quote {
+  border-left: 3px solid #d1d5db;
+  padding-left: 1rem;
+  color: #6b7280;
+  margin: 1rem 0;
+  font-style: italic;
+}
+
+.gmail_quote_header {
+  color: #6b7280;
+  font-style: italic;
+  margin-top: 1.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Animation for email transitions */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.email-message {
+  animation: fadeIn 0.3s ease-out;
+}
