@@ -21,6 +21,17 @@ export function registerGmailHandlers() {
     }
   });
 
+  ipcMain.handle("sync-emails", async () => {
+    const emailService = await createEmailService();
+    if (!emailService) {
+      throw new Error(
+        "Failed to create email service - authentication may have failed"
+      );
+    }
+
+    const emails = await emailService.getEmails(100);
+  });
+
   ipcMain.handle("get-emails", async (_, maxResults = 10, query?: string) => {
     try {
       console.log(

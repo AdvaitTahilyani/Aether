@@ -9,7 +9,7 @@ import dotenv from "dotenv";
 import fs from "fs";
 import { EmailService } from "../src/services/api/email-service";
 import { registerGmailHandlers } from "../src/services/ipcMain/gmail";
-
+import { initDb } from "./database";
 // Import our ServerManager
 const ServerManager = require("../../server/server_manager");
 const serverManager = new ServerManager();
@@ -433,6 +433,8 @@ ipcMain.handle("llama:server-logs", () => {
 
 // Create window when app is ready
 app.whenReady().then(() => {
+  initDb();
+
   // Register IPC handlers
   registerGmailHandlers();
 
