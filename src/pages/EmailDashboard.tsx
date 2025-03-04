@@ -373,9 +373,9 @@ function EmailDashboard({ userEmail, onLogout }: EmailDashboardProps) {
           style={{ width: `${100 - columnWidth}%` }}
         >
           {selectedEmail ? (
-            <EmailViewer 
-              selectedEmail={selectedEmail} 
-              userEmail={userEmail} 
+            <EmailViewer
+              selectedEmail={selectedEmail}
+              userEmail={userEmail}
               onClearSelection={handleClearSelection}
             />
           ) : (
