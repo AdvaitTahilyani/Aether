@@ -3,7 +3,6 @@ import { EmailDetails } from "../types";
 import {
   getEmailSubject,
   getEmailSender,
-  formatDetailedDate,
   getEnhancedEmailBody,
   checkEmailAPIAvailable,
   getEmailRecipients,
@@ -16,12 +15,16 @@ import EmailSummarizer from "./EmailSummarizer";
 import EmailThreadList from "./viewer-components/EmailThreadList";
 import ComposeEmail from "./ComposeEmail";
 import AutoReplyGenerator from "./AutoReplyGenerator";
+import NoEmailSelected from "./viewer-components/NoEmailSelected";
 
 interface EmailViewerProps {
   selectedEmail: EmailDetails | null;
   userEmail?: string;
   onClearSelection?: () => void;
 }
+
+// Add this type at the top of your file
+type TimeoutId = ReturnType<typeof setTimeout>;
 
 // Helper function to safely get email body
 export const safeGetEmailBody = (email: EmailDetails | null): string => {
@@ -100,7 +103,11 @@ export const safeGetEmailBody = (email: EmailDetails | null): string => {
   }
 };
 
-function EmailViewer({ selectedEmail, userEmail = "user@example.com", onClearSelection }: EmailViewerProps) {
+function EmailViewer({
+  selectedEmail,
+  userEmail = "user@example.com",
+  onClearSelection,
+}: EmailViewerProps) {
   const [threadEmails, setThreadEmails] = useState<EmailDetails[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -113,13 +120,16 @@ function EmailViewer({ selectedEmail, userEmail = "user@example.com", onClearSel
   const [replyingToId, setReplyingToId] = useState<string | null>(null);
   const [showReplyForm, setShowReplyForm] = useState<boolean>(false);
   // Ref to store timers for marking emails as read
-  const readTimersRef = useRef<Record<string, NodeJS.Timeout>>({});
+  const readTimersRef = useRef<Record<string, TimeoutId>>({});
   // Add a ref for the iframe with the correct type
   const iframeRef = useRef<HTMLIFrameElement>(null);
   // State to control whether the summarizer is expanded
-  const [isSummarizerExpanded, setIsSummarizerExpanded] = useState<boolean>(false);
+  const [isSummarizerExpanded, setIsSummarizerExpanded] =
+    useState<boolean>(false);
   // State to store generated replies
-  const [generatedReplies, setGeneratedReplies] = useState<Record<string, string>>({});
+  const [generatedReplies, setGeneratedReplies] = useState<
+    Record<string, string>
+  >({});
 
   // Toggle recipient expansion for a specific email
   const toggleRecipients = (emailId: string) => {
@@ -260,9 +270,9 @@ function EmailViewer({ selectedEmail, userEmail = "user@example.com", onClearSel
 
   // Handle auto-reply generation when a new email is selected
   const handleReplyGenerated = (emailId: string, reply: string) => {
-    setGeneratedReplies(prev => ({
+    setGeneratedReplies((prev) => ({
       ...prev,
-      [emailId]: reply
+      [emailId]: reply,
     }));
   };
 
@@ -378,7 +388,7 @@ function EmailViewer({ selectedEmail, userEmail = "user@example.com", onClearSel
     // Reset reply-related state
     setReplyingToId(null);
     setShowReplyForm(false);
-    
+
     // Clear the selected email to show the default screen
     if (onClearSelection) {
       onClearSelection();
@@ -431,28 +441,7 @@ function EmailViewer({ selectedEmail, userEmail = "user@example.com", onClearSel
   };
 
   if (!selectedEmail) {
-    return (
-      <div className="h-full flex items-center justify-center p-8 bg-white text-gray-500">
-        <div className="text-center">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-16 w-16 mx-auto mb-4 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-            />
-          </svg>
-          <h3 className="text-xl font-medium mb-2">No Email Selected</h3>
-          <p>Select an email from the list to view its contents</p>
-        </div>
-      </div>
-    );
+    return <NoEmailSelected />;
   }
 
   // Get the subject from the most recent email in the thread
@@ -498,20 +487,27 @@ function EmailViewer({ selectedEmail, userEmail = "user@example.com", onClearSel
   // Background auto-reply generator for the most recent email in the thread
   // Memoize this function to prevent unnecessary re-renders
   const backgroundAutoReplyGenerator = useCallback(() => {
-    const mostRecentEmail = threadEmails.length > 0 ? threadEmails[0] : selectedEmail;
-    
+    const mostRecentEmail =
+      threadEmails.length > 0 ? threadEmails[0] : selectedEmail;
+
     // Only generate a reply for the most recent email in the thread
-    if (mostRecentEmail && mostRecentEmail.id && !generatedReplies[mostRecentEmail.id]) {
+    if (
+      mostRecentEmail &&
+      mostRecentEmail.id &&
+      !generatedReplies[mostRecentEmail.id]
+    ) {
       return (
         <AutoReplyGenerator
           key={mostRecentEmail.id} // Add key prop to ensure proper re-rendering
           email={mostRecentEmail}
-          onReplyGenerated={(reply) => handleReplyGenerated(mostRecentEmail.id!, reply)}
+          onReplyGenerated={(reply) =>
+            handleReplyGenerated(mostRecentEmail.id!, reply)
+          }
           userEmail={userEmail}
         />
       );
     }
-    
+
     return null;
   }, [threadEmails, selectedEmail, generatedReplies, userEmail]);
 
@@ -523,7 +519,7 @@ function EmailViewer({ selectedEmail, userEmail = "user@example.com", onClearSel
           const iframe = document.getElementById(
             `email-iframe-${email.id || index}`
           ) as HTMLIFrameElement;
-          
+
           if (iframe) {
             const emailBody = safeGetEmailBody(email);
             renderEmailInIframe(emailBody, iframe);
@@ -537,7 +533,7 @@ function EmailViewer({ selectedEmail, userEmail = "user@example.com", onClearSel
     <div className="h-full flex flex-col bg-white overflow-hidden">
       {/* Background auto-reply generator */}
       {backgroundAutoReplyGenerator()}
-      
+
       {/* Header with the most recent subject and reply button - removed sticky positioning */}
       <div className="bg-white border-b border-gray-200 shadow-sm flex-shrink-0">
         <div className="flex justify-between items-center px-4 py-2">
@@ -545,25 +541,26 @@ function EmailViewer({ selectedEmail, userEmail = "user@example.com", onClearSel
             <h2 className="text-lg font-bold text-black tracking-tight truncate">
               {subject}
             </h2>
-            
+
             {/* Display email labels in a more compact way */}
-            {threadEmails.length > 0 && getEmailLabels(threadEmails[0]).length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1">
-                {getEmailLabels(threadEmails[0]).map((label, i) => (
-                  <span
-                    key={i}
-                    className="inline-block px-2 py-0.5 text-xs rounded-full"
-                    style={{
-                      backgroundColor: `${label.color}20`,
-                      color: label.color,
-                      border: `1px solid ${label.color}`,
-                    }}
-                  >
-                    {label.name}
-                  </span>
-                ))}
-              </div>
-            )}
+            {threadEmails.length > 0 &&
+              getEmailLabels(threadEmails[0]).length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {getEmailLabels(threadEmails[0]).map((label, i) => (
+                    <span
+                      key={i}
+                      className="inline-block px-2 py-0.5 text-xs rounded-full"
+                      style={{
+                        backgroundColor: `${label.color}20`,
+                        color: label.color,
+                        border: `1px solid ${label.color}`,
+                      }}
+                    >
+                      {label.name}
+                    </span>
+                  ))}
+                </div>
+              )}
           </div>
 
           {/* Reply button - updated with modern design */}
@@ -594,7 +591,7 @@ function EmailViewer({ selectedEmail, userEmail = "user@example.com", onClearSel
 
         {/* Collapsible Email summary - updated with better styling */}
         <div className="px-4 pb-2">
-          <button 
+          <button
             onClick={() => setIsSummarizerExpanded(!isSummarizerExpanded)}
             className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center transition-colors"
           >
@@ -625,7 +622,7 @@ function EmailViewer({ selectedEmail, userEmail = "user@example.com", onClearSel
       {/* Email thread content with proper scrolling - takes up all remaining space */}
       <div className="flex-1 overflow-auto">
         <EmailThreadList
-          key={threadEmails.map(email => email.id).join('-')}
+          key={threadEmails.map((email) => email.id).join("-")}
           threadEmails={threadEmails}
           expandedRecipients={expandedRecipients}
           toggleRecipients={toggleRecipients}
@@ -649,15 +646,32 @@ function EmailViewer({ selectedEmail, userEmail = "user@example.com", onClearSel
           onSent={handleReplySuccess}
           isReply={replyingToId !== null}
           isForward={replyingToId === null && showReplyForm}
-          replyToEmail={replyingToId 
-            ? threadEmails.find(email => email.id === replyingToId) || selectedEmail 
-            : threadEmails[0] || selectedEmail}
-          replyToSubject={replyingToId 
-            ? getEmailSubject(threadEmails.find(email => email.id === replyingToId) || selectedEmail)
-            : getEmailSubject(threadEmails[0] || selectedEmail)}
-          replyToAddress={replyingToId 
-            ? parseEmailAddress(getEmailSender(threadEmails.find(email => email.id === replyingToId) || selectedEmail)).email
-            : parseEmailAddress(getEmailSender(threadEmails[0] || selectedEmail)).email}
+          replyToEmail={
+            replyingToId
+              ? threadEmails.find((email) => email.id === replyingToId) ||
+                selectedEmail
+              : threadEmails[0] || selectedEmail
+          }
+          replyToSubject={
+            replyingToId
+              ? getEmailSubject(
+                  threadEmails.find((email) => email.id === replyingToId) ||
+                    selectedEmail
+                )
+              : getEmailSubject(threadEmails[0] || selectedEmail)
+          }
+          replyToAddress={
+            replyingToId
+              ? parseEmailAddress(
+                  getEmailSender(
+                    threadEmails.find((email) => email.id === replyingToId) ||
+                      selectedEmail
+                  )
+                ).email
+              : parseEmailAddress(
+                  getEmailSender(threadEmails[0] || selectedEmail)
+                ).email
+          }
         />
       )}
     </div>

@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { EmailDetails } from "../types";
-import { createFallbackEmail, isElectronAPIAvailable } from "../services";
+import { createFallbackEmail } from "../services";
 import EmailList from "../components/EmailList";
 import EmailViewer from "../components/EmailViewer";
 import UserAvatar from "../components/UserAvatar";
 import ComposeEmail from "../components/ComposeEmail";
 import Sidebar, { EmailCategory } from "../components/Sidebar";
 import SearchBar from "../components/SearchBar";
+import NoEmailSelected from "../components/viewer-components/NoEmailSelected";
 
 interface EmailDashboardProps {
   userEmail: string;
@@ -35,10 +36,6 @@ function EmailDashboard({ userEmail, onLogout }: EmailDashboardProps) {
     try {
       setLoading(true);
       setPermissionError(false);
-
-      if (!isElectronAPIAvailable()) {
-        throw new Error("Electron API not available");
-      }
 
       // Create a query based on the current category
       let query: string | undefined;
@@ -379,11 +376,7 @@ function EmailDashboard({ userEmail, onLogout }: EmailDashboardProps) {
               onClearSelection={handleClearSelection}
             />
           ) : (
-            <div className="h-full flex items-center justify-center bg-gray-100 dark:bg-[#1A1A1A]">
-              <p className="text-gray-500 dark:text-gray-400">
-                Select an email to view
-              </p>
-            </div>
+            <NoEmailSelected />
           )}
         </div>
       </div>
