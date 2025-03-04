@@ -265,7 +265,7 @@ function EmailDashboard({ userEmail, onLogout }: EmailDashboardProps) {
       {/* Header with app title, search bar, and user avatar */}
       <header className="bg-white/10 backdrop-blur-lg p-6 border-b border-white/30 flex justify-between items-center">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-semibold tracking-tight">Aether Mail</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Aether</h1>
         </div>
         <div className="flex-grow flex justify-center">
           <SearchBar onSearchResults={handleSearchResults} />

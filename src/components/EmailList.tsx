@@ -11,6 +11,12 @@ import {
 import EmailFilters from "./EmailFilters";
 import { EmailCategory } from "./Sidebar";
 import { useEmailStore } from "../store/email";
+import {
+  RefreshIcon,
+  StarFilledIcon,
+  StarOutlineIcon,
+  TrashIcon,
+} from "./icons";
 
 interface EmailListProps {
   emails: EmailDetails[];
@@ -541,20 +547,7 @@ const EmailList: React.FC<EmailListProps> = ({
             className="p-2 text-gray-400 hover:text-white transition-colors"
             aria-label="Refresh emails"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
+            <RefreshIcon />
           </button>
         </div>
 
@@ -647,33 +640,9 @@ const EmailList: React.FC<EmailListProps> = ({
                             }
                           >
                             {isStarred ? (
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="currentColor"
-                                className="w-6 h-6 text-yellow-400"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
+                              <StarFilledIcon className="w-6 h-6 text-yellow-400" />
                             ) : (
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth={1.5}
-                                stroke="currentColor"
-                                className="w-6 h-6"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
-                                />
-                              </svg>
+                              <StarOutlineIcon />
                             )}
                           </button>
                         </div>
@@ -694,18 +663,7 @@ const EmailList: React.FC<EmailListProps> = ({
                             onClick={(e) => handleDeleteEmail(latestEmail, e)}
                             aria-label="Delete email"
                           >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                              className="w-5 h-5"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
+                            <TrashIcon />
                           </button>
                         )}
                       </div>

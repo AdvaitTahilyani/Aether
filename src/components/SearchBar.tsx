@@ -29,11 +29,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearchResults }) => {
       setApiAvailable(available);
 
       if (!available) {
-        console.log("Search API not available yet, will retry...");
-        // Retry after a short delay
+        console.error("Search API not available yet, will retry...");
         setTimeout(checkAPI, 1000);
-      } else {
-        console.log("Search API is available");
       }
     };
 
