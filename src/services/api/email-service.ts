@@ -90,7 +90,6 @@ export class EmailService {
     try {
       return await this.gmailApi.testConnection();
     } catch (error) {
-      console.error("Email service connection test failed:", error);
       return false;
     }
   }
@@ -107,14 +106,9 @@ export class EmailService {
     query?: string
   ): Promise<Array<{ id: string; threadId: string }>> {
     try {
-      console.log(
-        `Fetching up to ${maxResults} emails with query: ${query || "none"}`
-      );
       const emails = await this.gmailApi.listMessages(maxResults, query);
-      console.log(`Successfully fetched ${emails.length} emails`);
       return emails;
     } catch (error) {
-      console.error("Error fetching emails:", error);
       throw error;
     }
   }
@@ -127,14 +121,10 @@ export class EmailService {
    */
   async getEmailDetails(emailId: string): Promise<ParsedEmail> {
     try {
-      console.log(`Fetching details for email ${emailId}...`);
       const rawEmail = await this.gmailApi.getMessage(emailId);
-      console.log(`Successfully fetched raw email data for ${emailId}`);
       const parsedEmail = this.parseEmail(rawEmail);
-      console.log(`Successfully parsed email ${emailId}`);
       return parsedEmail;
     } catch (error) {
-      console.error(`Error fetching email details for ${emailId}:`, error);
       throw error;
     }
   }
@@ -151,19 +141,12 @@ export class EmailService {
     maxResults = 20
   ): Promise<ParsedEmail[]> {
     try {
-      console.log(
-        `Fetching up to ${maxResults} emails in thread ${threadId}...`
-      );
       const rawEmails = await this.gmailApi.getThreadMessages(
         threadId,
         maxResults
       );
-      console.log(
-        `Successfully fetched ${rawEmails.length} emails in thread ${threadId}`
-      );
       return rawEmails.map((email) => this.parseEmail(email));
     } catch (error) {
-      console.error(`Error fetching thread emails for ${threadId}:`, error);
       throw error;
     }
   }
@@ -188,21 +171,17 @@ export class EmailService {
     emailId: string
   ): Promise<{ success: boolean; wasUnread: boolean }> {
     try {
-      // First, get the current email to check if it has the UNREAD label
       const email = await this.gmailApi.getMessage(emailId, "minimal");
       const hasUnreadLabel =
         email.labelIds && email.labelIds.includes("UNREAD");
 
       if (hasUnreadLabel) {
-        // Remove the UNREAD label
         await this.gmailApi.modifyMessageLabels(emailId, [], ["UNREAD"]);
         return { success: true, wasUnread: true };
       }
 
-      // Email was already read
       return { success: true, wasUnread: false };
     } catch (error) {
-      console.error(`Error marking email ${emailId} as read:`, error);
       throw error;
     }
   }
@@ -217,28 +196,23 @@ export class EmailService {
     emailId: string
   ): Promise<{ success: boolean; isStarred: boolean }> {
     try {
-      // First, get the current email to check if it's already starred
       const email = await this.getEmailDetails(emailId);
       const isCurrentlyStarred = email.labelIds?.includes("STARRED") || false;
 
-      // Prepare the label modifications based on current state
       const addLabelIds = isCurrentlyStarred ? [] : ["STARRED"];
       const removeLabelIds = isCurrentlyStarred ? ["STARRED"] : [];
 
-      // Call the Gmail API to modify the labels
       await this.gmailApi.modifyMessageLabels(
         emailId,
         addLabelIds,
         removeLabelIds
       );
 
-      // Return the new star status (opposite of the current status)
       return {
         success: true,
         isStarred: !isCurrentlyStarred,
       };
     } catch (error) {
-      console.error(`Error toggling star for email ${emailId}:`, error);
       throw error;
     }
   }
@@ -254,21 +228,17 @@ export class EmailService {
     try {
       // Validate the email object
       if (!rawEmail || typeof rawEmail !== "object") {
-        console.error("Invalid email object received (null or not an object)");
         return this.createFallbackEmail("unknown");
       }
 
       if (!rawEmail.id) {
-        console.error("Email object missing ID:", rawEmail);
         return this.createFallbackEmail("unknown");
       }
 
       const emailId = rawEmail.id;
-      console.log(`Parsing email ${emailId}...`);
 
       // Check if we have a valid payload
       if (!rawEmail.payload) {
-        console.error(`Email ${emailId} missing payload:`, rawEmail);
         return this.createFallbackEmail(emailId, rawEmail.threadId);
       }
 
@@ -285,7 +255,6 @@ export class EmailService {
           );
           return header ? header.value : "";
         } catch (error) {
-          console.error(`Error getting header ${name}:`, error);
           return "";
         }
       };
@@ -332,10 +301,6 @@ export class EmailService {
 
           return recipients;
         } catch (error) {
-          console.error(
-            `Error parsing recipients from "${headerValue}":`,
-            error
-          );
           return [];
         }
       };
@@ -354,26 +319,7 @@ export class EmailService {
 
           // Prevent infinite recursion
           if (depth > 10) {
-            console.warn(
-              `Reached maximum recursion depth (10) while parsing email ${emailId}`
-            );
             return;
-          }
-
-          // Log the part structure for debugging
-          if (depth === 0) {
-            console.log(
-              `Email ${emailId} part structure:`,
-              JSON.stringify({
-                mimeType: part.mimeType,
-                filename: part.filename,
-                hasBody: !!part.body,
-                hasBodyData: !!(part.body && part.body.data),
-                hasBodyAttachmentId: !!(part.body && part.body.attachmentId),
-                hasParts: !!(part.parts && part.parts.length),
-                partsCount: part.parts ? part.parts.length : 0,
-              })
-            );
           }
 
           // Handle direct body content
@@ -401,12 +347,7 @@ export class EmailService {
                   bodies.plain = decodedContent;
                 }
               }
-            } catch (error) {
-              console.error(
-                `Error decoding body content for email ${emailId}:`,
-                error
-              );
-            }
+            } catch (error) {}
           }
 
           // Handle multipart messages
@@ -433,20 +374,10 @@ export class EmailService {
                 bodies.plain = bodies.plain
                   ? bodies.plain + "\n" + content
                   : content;
-              } catch (error) {
-                console.error(
-                  `Error decoding multipart body for email ${emailId}:`,
-                  error
-                );
-              }
+              } catch (error) {}
             }
           }
-        } catch (error) {
-          console.error(
-            `Error extracting body at depth ${depth} for email ${emailId}:`,
-            error
-          );
-        }
+        } catch (error) {}
       };
 
       // Process the email payload
@@ -496,12 +427,7 @@ export class EmailService {
               findAttachments(subpart, depth + 1)
             );
           }
-        } catch (error) {
-          console.error(
-            `Error finding attachments at depth ${depth} for email ${emailId}:`,
-            error
-          );
-        }
+        } catch (error) {}
       };
 
       // Find attachments in the email payload
@@ -517,13 +443,9 @@ export class EmailService {
 
         // Validate the date - if it's invalid, fall back to current date
         if (isNaN(emailDate.getTime())) {
-          console.warn(
-            `Invalid date for email ${emailId}, using current date as fallback`
-          );
           emailDate = new Date();
         }
       } catch (error) {
-        console.error(`Error parsing date for email ${emailId}:`, error);
         emailDate = new Date();
       }
 
@@ -547,10 +469,8 @@ export class EmailService {
         headers,
       };
 
-      console.log(`Successfully parsed email ${emailId}`);
       return parsedEmail;
     } catch (error) {
-      console.error("Error parsing email:", error);
       // Return a minimal valid email object
       return this.createFallbackEmail(
         rawEmail?.id || "unknown",
@@ -573,7 +493,6 @@ export class EmailService {
     threadId?: string,
     snippet?: string
   ): ParsedEmail {
-    console.log(`Creating fallback email for ${id}`);
     return {
       id: id,
       threadId: threadId || id,
@@ -623,15 +542,12 @@ export class EmailService {
     threadId?: string
   ): Promise<{ success: boolean; messageId?: string }> {
     try {
-      // Get the user's email address to use as the sender
       const from = await this.getUserEmail();
 
-      // Construct the email headers
       let emailContent = "";
       emailContent += `From: ${from}\r\n`;
       emailContent += `To: ${to}\r\n`;
 
-      // Add CC and BCC headers if provided
       if (cc) {
         emailContent += `Cc: ${cc}\r\n`;
       }
@@ -649,27 +565,23 @@ export class EmailService {
         emailContent += `Content-Type: text/plain; charset=utf-8\r\n`;
       }
 
-      // Separate headers from the body with a blank line
       emailContent += `\r\n${body}`;
 
-      // Encode the email content to base64url format
       const encodedEmail = Buffer.from(emailContent)
         .toString("base64")
         .replace(/\+/g, "-")
         .replace(/\//g, "_")
         .replace(/=+$/, "");
 
-      // Parse CC and BCC recipients into arrays
       const ccArray = cc ? cc.split(",").map((email) => email.trim()) : [];
       const bccArray = bcc ? bcc.split(",").map((email) => email.trim()) : [];
 
-      // Send the email using the Gmail API
       const result = await this.gmailApi.sendEmail({
         raw: encodedEmail,
         to,
         cc: ccArray,
         bcc: bccArray,
-        threadId, // Pass the threadId if provided
+        threadId,
       });
 
       return {
@@ -677,7 +589,6 @@ export class EmailService {
         messageId: result.id,
       };
     } catch (error) {
-      console.error("Failed to send email:", error);
       return {
         success: false,
       };
@@ -704,40 +615,23 @@ export class EmailService {
     to: string;
   }): Promise<{ success: boolean; messageId: string }> {
     try {
-      console.log("sendEmailReply called with parameters:", {
-        emailId,
-        threadId,
-        contentLength: content.length,
-        to,
-      });
-
       if (!to || typeof to !== "string" || !to.includes("@")) {
-        console.error("Invalid recipient email:", to);
         throw new Error(`Invalid recipient email: ${to}`);
       }
 
-      // Get the original email to extract headers
       const originalEmail = await this.gmailApi.getMessage(emailId);
-
-      // Get the user's email address
       const userProfile = await this.gmailApi.getUserProfile();
-
-      // Extract message ID and references from the original email
       const headers = originalEmail.payload.headers;
 
-      // Find the Message-ID header, ensuring it has angle brackets
       let messageId = headers.find(
         (h: any) => h.name === "Message-ID" || h.name === "Message-Id"
       )?.value;
       if (!messageId) {
-        // If no Message-ID found, generate one based on the email ID
         messageId = `<${emailId}@mail.gmail.com>`;
-        console.log(`No Message-ID found, generated: ${messageId}`);
       } else if (!messageId.includes("<")) {
         messageId = `<${messageId}>`;
       }
 
-      // Find the References header, ensuring it has angle brackets
       let references =
         headers.find((h: any) => h.name === "References")?.value || "";
       if (references && !references.includes("<")) {
@@ -747,34 +641,23 @@ export class EmailService {
           .join(" ");
       }
 
-      // Get the subject, ensuring it has "Re:" prefix
       let subject = headers.find((h: any) => h.name === "Subject")?.value || "";
       if (!subject) {
         subject = "Re: No Subject";
-        console.log("No subject found, using default");
       } else if (!subject.startsWith("Re:")) {
         subject = `Re: ${subject}`;
       }
 
-      console.log(`Preparing reply with subject: ${subject}`);
-      console.log(`In-Reply-To: ${messageId}`);
-      console.log(
-        `References: ${references ? `${references} ${messageId}` : messageId}`
-      );
-
-      // Create email headers
       const emailHeaders = [
         `From: ${userProfile.emailAddress}`,
         `To: ${to}`,
         `Subject: ${subject}`,
       ];
 
-      // Add In-Reply-To header if we have a Message-ID
       if (messageId) {
         emailHeaders.push(`In-Reply-To: ${messageId}`);
       }
 
-      // Add References header, appending the Message-ID if it exists
       if (messageId) {
         const newReferences = references
           ? `${references} ${messageId}`
@@ -782,19 +665,14 @@ export class EmailService {
         emailHeaders.push(`References: ${newReferences}`);
       }
 
-      // Add MIME headers
       emailHeaders.push(
         "MIME-Version: 1.0",
         "Content-Type: text/html; charset=UTF-8"
       );
 
-      // Join headers
       const headerString = emailHeaders.join("\r\n");
-
-      // Create email body with quoted original content
       let emailBody = `<div>${content}</div>`;
 
-      // Add a quote of the original message if available
       const originalPlainText = this.extractPlainTextContent(originalEmail);
       if (originalPlainText) {
         emailBody += `<br><br><div style="border-left: 1px solid #ccc; padding-left: 10px; color: #666;">
@@ -805,56 +683,30 @@ export class EmailService {
         </div>`;
       }
 
-      // Combine headers and body
       const emailContent = `${headerString}\r\n\r\n${emailBody}`;
 
-      console.log("Email content prepared, encoding and sending...");
-
-      // Encode the email content to base64url format
       const encodedEmail = Buffer.from(emailContent)
         .toString("base64")
         .replace(/\+/g, "-")
         .replace(/\//g, "_")
         .replace(/=+$/, "");
 
-      // Send the email using the Gmail API
       const result = await this.gmailApi.sendEmail({
         raw: encodedEmail,
         to,
         cc: [],
         bcc: [],
-        threadId: threadId, // Pass the threadId to ensure it's added to the correct thread
+        threadId: threadId,
       });
-
-      console.log(`Email reply sent successfully! Message ID: ${result.id}`);
-      console.log(`Thread ID: ${threadId}`);
-      console.log(`Recipient: ${to}`);
-      console.log(`Email headers: ${headerString.substring(0, 200)}...`);
 
       return {
         success: true,
         messageId: result.id,
       };
     } catch (error) {
-      console.error("Error sending email reply:", error);
-      // Add more detailed error information
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      console.error(`Error details: ${errorMessage}`);
-
-      // Log the parameters that were used
-      console.error("Parameters used:", {
-        emailId,
-        threadId,
-        contentLength: content?.length || 0,
-        to,
-      });
-
-      throw new Error(
-        `Failed to send email reply: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
+      throw new Error(`Failed to send email reply: ${errorMessage}`);
     }
   }
 
@@ -865,17 +717,14 @@ export class EmailService {
    */
   private extractPlainTextContent(email: any): string {
     try {
-      // If the email has no payload or parts, return empty string
       if (!email.payload || (!email.payload.body && !email.payload.parts)) {
         return "";
       }
 
-      // If the email has a body with data, decode and return it
       if (email.payload.body && email.payload.body.data) {
         return Buffer.from(email.payload.body.data, "base64").toString("utf-8");
       }
 
-      // If the email has parts, look for text/plain part
       if (email.payload.parts) {
         for (const part of email.payload.parts) {
           if (part.mimeType === "text/plain" && part.body && part.body.data) {
@@ -883,7 +732,6 @@ export class EmailService {
           }
         }
 
-        // If no text/plain part, try to find any part with data
         for (const part of email.payload.parts) {
           if (part.body && part.body.data) {
             return Buffer.from(part.body.data, "base64").toString("utf-8");
@@ -893,7 +741,6 @@ export class EmailService {
 
       return "";
     } catch (error) {
-      console.error("Error extracting plain text content:", error);
       return "";
     }
   }

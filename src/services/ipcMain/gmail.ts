@@ -29,7 +29,7 @@ export function registerGmailHandlers() {
       );
     }
 
-    const emails = await emailService.getEmails(100);
+    const gmailEmails = await emailService.getEmails(100);
   });
 
   ipcMain.handle("get-emails", async (_, maxResults = 10, query?: string) => {

@@ -16,11 +16,10 @@ import EmailThreadList from "./viewer-components/EmailThreadList";
 import ComposeEmail from "./ComposeEmail";
 import AutoReplyGenerator from "./AutoReplyGenerator";
 import NoEmailSelected from "./viewer-components/NoEmailSelected";
+import { useEmailStore } from "../store/email";
 
 interface EmailViewerProps {
-  selectedEmail: EmailDetails | null;
   userEmail?: string;
-  onClearSelection?: () => void;
 }
 
 // Add this type at the top of your file
@@ -103,11 +102,8 @@ export const safeGetEmailBody = (email: EmailDetails | null): string => {
   }
 };
 
-function EmailViewer({
-  selectedEmail,
-  userEmail = "user@example.com",
-  onClearSelection,
-}: EmailViewerProps) {
+function EmailViewer({ userEmail = "user@example.com" }: EmailViewerProps) {
+  const { currentSelectedEmail } = useEmailStore();
   const [threadEmails, setThreadEmails] = useState<EmailDetails[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -218,17 +214,17 @@ function EmailViewer({
 
   // Fetch thread emails when selected email changes
   useEffect(() => {
-    if (!selectedEmail) {
+    if (!currentSelectedEmail) {
       setThreadEmails([]);
       return;
     }
 
     // Start with the selected email
-    setThreadEmails([selectedEmail]);
+    setThreadEmails([currentSelectedEmail]);
 
     // If we have a threadId, fetch other emails in the thread
     if (
-      selectedEmail.threadId &&
+      currentSelectedEmail.threadId &&
       checkEmailAPIAvailable() &&
       typeof window.electronAPI?.getThreadEmails === "function"
     ) {
@@ -237,13 +233,13 @@ function EmailViewer({
           setLoading(true);
           // Fetch up to 25 emails in the thread
           const threadMessages = await window.electronAPI!.getThreadEmails(
-            selectedEmail.threadId,
+            currentSelectedEmail.threadId,
             25 // Request at least 25 emails
           );
 
           if (!threadMessages || threadMessages.length === 0) {
             // If no thread messages, just use the selected email
-            setThreadEmails([selectedEmail]);
+            setThreadEmails([currentSelectedEmail]);
             return;
           }
 
@@ -258,7 +254,7 @@ function EmailViewer({
           console.error("Error fetching thread emails:", err);
           setError("Failed to load the complete conversation");
           // Still show the selected email
-          setThreadEmails([selectedEmail]);
+          setThreadEmails([currentSelectedEmail]);
         } finally {
           setLoading(false);
         }
@@ -266,7 +262,7 @@ function EmailViewer({
 
       fetchThreadEmails();
     }
-  }, [selectedEmail]);
+  }, [currentSelectedEmail]);
 
   // Handle auto-reply generation when a new email is selected
   const handleReplyGenerated = (emailId: string, reply: string) => {
@@ -390,8 +386,8 @@ function EmailViewer({
     setShowReplyForm(false);
 
     // Clear the selected email to show the default screen
-    if (onClearSelection) {
-      onClearSelection();
+    if (!currentSelectedEmail) {
+      <NoEmailSelected />;
     } else {
       // If no callback is provided, just clear local state
       setThreadEmails([]);
@@ -406,9 +402,9 @@ function EmailViewer({
     if (threadEmails.length > 0 && threadEmails[0].id) {
       setReplyingToId(threadEmails[0].id);
       setShowReplyForm(true);
-    } else if (selectedEmail && selectedEmail.id) {
+    } else if (currentSelectedEmail && currentSelectedEmail.id) {
       // Otherwise reply to the selected email
-      setReplyingToId(selectedEmail.id);
+      setReplyingToId(currentSelectedEmail.id);
       setShowReplyForm(true);
     }
   };
@@ -430,8 +426,8 @@ function EmailViewer({
   // Handle email deletion success
   const handleDeleteSuccess = () => {
     // Clear the selected email to show the default screen
-    if (onClearSelection) {
-      onClearSelection();
+    if (!currentSelectedEmail) {
+      <NoEmailSelected />;
     } else {
       // If no callback is provided, just clear local state
       setThreadEmails([]);
@@ -440,7 +436,7 @@ function EmailViewer({
     }
   };
 
-  if (!selectedEmail) {
+  if (!currentSelectedEmail) {
     return <NoEmailSelected />;
   }
 
@@ -448,7 +444,7 @@ function EmailViewer({
   const subject =
     threadEmails.length > 0
       ? getEmailSubject(threadEmails[0])
-      : getEmailSubject(selectedEmail);
+      : getEmailSubject(currentSelectedEmail);
 
   // Get unique participants from all emails in the thread
   const getUniqueParticipants = () => {
@@ -488,7 +484,7 @@ function EmailViewer({
   // Memoize this function to prevent unnecessary re-renders
   const backgroundAutoReplyGenerator = useCallback(() => {
     const mostRecentEmail =
-      threadEmails.length > 0 ? threadEmails[0] : selectedEmail;
+      threadEmails.length > 0 ? threadEmails[0] : currentSelectedEmail;
 
     // Only generate a reply for the most recent email in the thread
     if (
@@ -509,7 +505,7 @@ function EmailViewer({
     }
 
     return null;
-  }, [threadEmails, selectedEmail, generatedReplies, userEmail]);
+  }, [threadEmails, currentSelectedEmail, generatedReplies, userEmail]);
 
   // Effect to render email in iframe when thread emails change
   useEffect(() => {
@@ -613,7 +609,7 @@ function EmailViewer({
           </button>
           {isSummarizerExpanded && (
             <div className="mt-2 p-3 bg-indigo-50 rounded-lg">
-              <EmailSummarizer email={selectedEmail} />
+              <EmailSummarizer email={currentSelectedEmail} />
             </div>
           )}
         </div>
@@ -649,27 +645,27 @@ function EmailViewer({
           replyToEmail={
             replyingToId
               ? threadEmails.find((email) => email.id === replyingToId) ||
-                selectedEmail
-              : threadEmails[0] || selectedEmail
+                currentSelectedEmail
+              : threadEmails[0] || currentSelectedEmail
           }
           replyToSubject={
             replyingToId
               ? getEmailSubject(
                   threadEmails.find((email) => email.id === replyingToId) ||
-                    selectedEmail
+                    currentSelectedEmail
                 )
-              : getEmailSubject(threadEmails[0] || selectedEmail)
+              : getEmailSubject(threadEmails[0] || currentSelectedEmail)
           }
           replyToAddress={
             replyingToId
               ? parseEmailAddress(
                   getEmailSender(
                     threadEmails.find((email) => email.id === replyingToId) ||
-                      selectedEmail
+                      currentSelectedEmail
                   )
                 ).email
               : parseEmailAddress(
-                  getEmailSender(threadEmails[0] || selectedEmail)
+                  getEmailSender(threadEmails[0] || currentSelectedEmail)
                 ).email
           }
         />

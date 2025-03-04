@@ -10,13 +10,12 @@ import {
 } from "../services";
 import EmailFilters from "./EmailFilters";
 import { EmailCategory } from "./Sidebar";
+import { useEmailStore } from "../store/email";
 
 interface EmailListProps {
   emails: EmailDetails[];
   loading: boolean;
   error: string | null;
-  onSelectEmail: (email: EmailDetails) => void;
-  selectedEmailId: string | null;
   onRefresh: () => void; // Add callback to refresh emails after deletion
   onPermissionError?: () => void; // Add callback for permission errors
   category?: EmailCategory; // Add category prop
@@ -36,18 +35,24 @@ const EmailList: React.FC<EmailListProps> = ({
   emails,
   loading,
   error,
-  onSelectEmail,
-  selectedEmailId,
   onRefresh,
   onPermissionError,
   category = "inbox", // Default to inbox
 }) => {
+  const { currentSelectedEmail, setCurrentSelectedEmail } = useEmailStore();
   // Debug: Log emails when they change
+
+  const handleSelectEmail = (email: EmailDetails) => {
+    if (currentSelectedEmail && currentSelectedEmail.id === email.id) {
+      setCurrentSelectedEmail(null);
+    } else {
+      setCurrentSelectedEmail(email);
+    }
+  };
   useEffect(() => {
     console.log(`EmailList received ${category} emails:`, emails);
     if (emails.length > 0) {
       // Log the structure of the first email for debugging
-      console.log("First email structure:", JSON.stringify(emails[0], null, 2));
 
       // Check if essential fields are present
       const missingFields = emails.filter(
@@ -446,11 +451,11 @@ const EmailList: React.FC<EmailListProps> = ({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Only handle arrow keys if we have emails and a selected email
-      if (filteredThreads.length === 0 || !selectedEmailId) return;
+      if (filteredThreads.length === 0 || !currentSelectedEmail) return;
 
       // Find the index of the currently selected email
       const currentIndex = filteredThreads.findIndex(
-        ({ latestEmail }) => latestEmail.id === selectedEmailId
+        ({ latestEmail }) => latestEmail.id === currentSelectedEmail.id
       );
 
       if (currentIndex === -1) return;
@@ -477,7 +482,7 @@ const EmailList: React.FC<EmailListProps> = ({
       if (newIndex !== currentIndex) {
         e.preventDefault(); // Prevent default scrolling
         const newEmail = filteredThreads[newIndex].latestEmail;
-        onSelectEmail(newEmail);
+        handleSelectEmail(newEmail);
 
         // Scroll the email into view if needed
         const emailElements =
@@ -498,7 +503,7 @@ const EmailList: React.FC<EmailListProps> = ({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [filteredThreads, selectedEmailId, onSelectEmail]);
+  }, [filteredThreads, currentSelectedEmail, handleSelectEmail]);
 
   // Get category title for display
   const getCategoryTitle = (): string => {
@@ -617,15 +622,15 @@ const EmailList: React.FC<EmailListProps> = ({
                   <div
                     key={threadId}
                     className={`p-5 hover:bg-white/10 cursor-pointer transition-all duration-300 email-item ${
-                      selectedEmailId === latestEmail.id
+                      currentSelectedEmail?.id === latestEmail.id
                         ? "bg-white/20 transform scale-[1.03] -translate-y-1 z-10 shadow-[0_0_15px_rgba(255,255,255,0.2)] selected-email-glow"
                         : ""
                     } ${isDeleting ? "deleting-email" : "opacity-100"}`}
-                    onClick={() => onSelectEmail(latestEmail)}
+                    onClick={() => handleSelectEmail(latestEmail)}
                   >
                     <div
                       className={`${
-                        selectedEmailId === latestEmail.id ? "p-1" : ""
+                        currentSelectedEmail?.id === latestEmail.id ? "p-1" : ""
                       } transition-all duration-300`}
                     >
                       <div className="flex justify-between items-start mb-2">

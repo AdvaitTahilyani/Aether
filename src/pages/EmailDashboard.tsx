@@ -8,6 +8,7 @@ import ComposeEmail from "../components/ComposeEmail";
 import Sidebar, { EmailCategory } from "../components/Sidebar";
 import SearchBar from "../components/SearchBar";
 import NoEmailSelected from "../components/viewer-components/NoEmailSelected";
+import { useEmailStore } from "../store/email";
 
 interface EmailDashboardProps {
   userEmail: string;
@@ -18,7 +19,6 @@ function EmailDashboard({ userEmail, onLogout }: EmailDashboardProps) {
   const [emails, setEmails] = useState<EmailDetails[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedEmail, setSelectedEmail] = useState<EmailDetails | null>(null);
   const [permissionError, setPermissionError] = useState<boolean>(false);
   const [showComposeEmail, setShowComposeEmail] = useState<boolean>(false);
   const [currentCategory, setCurrentCategory] =
@@ -30,6 +30,8 @@ function EmailDashboard({ userEmail, onLogout }: EmailDashboardProps) {
   const resizingRef = useRef<boolean>(false);
   const startXRef = useRef<number>(0);
   const startWidthRef = useRef<number>(33);
+
+  const { currentSelectedEmail, setCurrentSelectedEmail } = useEmailStore();
 
   // Function to fetch emails based on the current category
   const fetchEmails = async () => {
@@ -66,15 +68,6 @@ function EmailDashboard({ userEmail, onLogout }: EmailDashboardProps) {
         return;
       }
 
-      // Check if getEmailDetails is available
-      if (typeof window.electronAPI!.getEmailDetails !== "function") {
-        console.warn("getEmailDetails method is not available");
-        // Just use the basic email list with fallback details
-        setEmails(emailList.map((email) => createFallbackEmail(email)));
-        setLoading(false);
-        return;
-      }
-
       // Fetch details for each email (fetch at least 25 for better user experience)
       const emailsToFetch = emailList.slice(0, 25);
       const emailDetailsPromises = emailsToFetch.map(async (email) => {
@@ -89,7 +82,6 @@ function EmailDashboard({ userEmail, onLogout }: EmailDashboardProps) {
 
       // Wait for all email details to be fetched
       const emailDetails = await Promise.all(emailDetailsPromises);
-      console.log(`Fetched ${currentCategory} email details:`, emailDetails);
 
       setEmails(emailDetails as EmailDetails[]);
     } catch (err) {
@@ -111,17 +103,17 @@ function EmailDashboard({ userEmail, onLogout }: EmailDashboardProps) {
   useEffect(() => {
     fetchEmails();
     // Clear selected email when changing categories
-    setSelectedEmail(null);
+    setCurrentSelectedEmail(null);
   }, [currentCategory]);
 
   // Handle refreshing the email list
   const handleRefresh = () => {
     // If a deleted email was selected, clear the selection
     if (
-      selectedEmail &&
-      !emails.some((email) => email.id === selectedEmail.id)
+      currentSelectedEmail &&
+      !emails.some((email) => email.id === currentSelectedEmail.id)
     ) {
-      setSelectedEmail(null);
+      setCurrentSelectedEmail(null);
     }
 
     // Fetch emails again
@@ -129,20 +121,6 @@ function EmailDashboard({ userEmail, onLogout }: EmailDashboardProps) {
   };
 
   // Handle selecting or deselecting an email
-  const handleSelectEmail = (email: EmailDetails) => {
-    // If the clicked email is already selected, deselect it
-    if (selectedEmail && selectedEmail.id === email.id) {
-      setSelectedEmail(null);
-    } else {
-      // Otherwise, select the clicked email
-      setSelectedEmail(email);
-    }
-  };
-
-  // Handle clearing the selected email (used after sending a reply)
-  const handleClearSelection = () => {
-    setSelectedEmail(null);
-  };
 
   // Handle permission errors
   const handlePermissionError = () => {
@@ -174,7 +152,7 @@ function EmailDashboard({ userEmail, onLogout }: EmailDashboardProps) {
     if (!results || results.length === 0) {
       setSearchResults([]);
       setIsSearchMode(true);
-      setSelectedEmail(null);
+      setCurrentSelectedEmail(null);
       return;
     }
 
@@ -220,9 +198,9 @@ function EmailDashboard({ userEmail, onLogout }: EmailDashboardProps) {
 
     // If we have results, select the first one
     if (formattedResults.length > 0) {
-      setSelectedEmail(formattedResults[0]);
+      setCurrentSelectedEmail(formattedResults[0]);
     } else {
-      setSelectedEmail(null);
+      setCurrentSelectedEmail(null);
     }
   };
 
@@ -231,9 +209,9 @@ function EmailDashboard({ userEmail, onLogout }: EmailDashboardProps) {
     setSearchResults([]);
     // Reselect an email from the regular list if available
     if (emails.length > 0) {
-      setSelectedEmail(emails[0]);
+      setCurrentSelectedEmail(emails[0]);
     } else {
-      setSelectedEmail(null);
+      setCurrentSelectedEmail(null);
     }
   };
 
@@ -350,8 +328,6 @@ function EmailDashboard({ userEmail, onLogout }: EmailDashboardProps) {
             emails={isSearchMode ? searchResults : emails}
             loading={loading && !isSearchMode}
             error={error}
-            onSelectEmail={handleSelectEmail}
-            selectedEmailId={selectedEmail?.id || null}
             onRefresh={isSearchMode ? handleClearSearch : handleRefresh}
             onPermissionError={handlePermissionError}
             category={currentCategory}
@@ -369,12 +345,8 @@ function EmailDashboard({ userEmail, onLogout }: EmailDashboardProps) {
           className="h-full overflow-hidden"
           style={{ width: `${100 - columnWidth}%` }}
         >
-          {selectedEmail ? (
-            <EmailViewer
-              selectedEmail={selectedEmail}
-              userEmail={userEmail}
-              onClearSelection={handleClearSelection}
-            />
+          {currentSelectedEmail !== null ? (
+            <EmailViewer userEmail={userEmail} />
           ) : (
             <NoEmailSelected />
           )}
