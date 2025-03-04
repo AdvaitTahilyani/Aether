@@ -3,7 +3,10 @@ import { BasicEmailSchema, EmailDetailsSchema } from "./email";
 
 // Electron API Schema
 export const ElectronAPISchema = z.object({
-  storeSet: z.function().args(z.string(), z.string()).returns(z.promise(z.string())),
+  storeSet: z
+    .function()
+    .args(z.string(), z.string())
+    .returns(z.promise(z.string())),
   storeGet: z.function().args(z.string()).returns(z.promise(z.string())),
   loginWithGoogle: z.function().returns(z.promise(z.string())),
   getEmails: z
