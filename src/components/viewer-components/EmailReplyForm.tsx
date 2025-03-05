@@ -155,7 +155,10 @@ const EmailReplyForm: React.FC<EmailReplyFormProps> = ({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-[200px] max-h-[300px]">
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col flex-1 min-h-[200px] max-h-[300px]"
+      >
         {/* Formatting toolbar */}
         <div className="formatting-toolbar flex items-center space-x-1 border-b border-gray-200 p-2 bg-gray-50 flex-shrink-0">
           <button

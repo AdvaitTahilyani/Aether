@@ -10,35 +10,35 @@ import {
 } from "../../services";
 import EmailRecipients from "./EmailRecipients";
 import { safeGetEmailBody } from "./SafeEmailBody";
+import { useEmailStore } from "../../store/email";
 
 interface EmailMetadataProps {
-  email: EmailDetails;
   isExpanded: boolean;
   toggleRecipients: () => void;
 }
 
 const EmailMetadata: React.FC<EmailMetadataProps> = ({
-  email,
   isExpanded,
   toggleRecipients,
 }) => {
+  const { currentSelectedEmail } = useEmailStore();
   const [miniSummary, setMiniSummary] = useState<string | null>(null);
   const [loadingSummary, setLoadingSummary] = useState<boolean>(false);
 
-  const sender = getEmailSender(email);
+  const sender = getEmailSender(currentSelectedEmail);
   const { name: senderName, email: senderEmail } = parseEmailAddress(sender);
-  const recipients = getEmailRecipients(email);
-  const ccRecipients = getEmailCcRecipients(email);
+  const recipients = getEmailRecipients(currentSelectedEmail);
+  const ccRecipients = getEmailCcRecipients(currentSelectedEmail);
 
   // Fetch mini-summary for the email
   useEffect(() => {
     const fetchMiniSummary = async () => {
-      if (!email.id) return;
+      if (!currentSelectedEmail?.id) return;
 
       try {
         setLoadingSummary(true);
 
-        const emailBody = safeGetEmailBody(email);
+        const emailBody = safeGetEmailBody(currentSelectedEmail);
         const response = await fetch("http://localhost:5001/summarize-email", {
           method: "POST",
           headers: {
@@ -62,7 +62,7 @@ const EmailMetadata: React.FC<EmailMetadataProps> = ({
     };
 
     fetchMiniSummary();
-  }, [email.id]);
+  }, [currentSelectedEmail?.id]);
 
   return (
     <div className="email-metadata mb-6">
@@ -76,7 +76,7 @@ const EmailMetadata: React.FC<EmailMetadataProps> = ({
           </div>
         </div>
         <div className="text-base text-gray-600">
-          {formatDetailedDate(email.internalDate)}
+          {formatDetailedDate(currentSelectedEmail?.internalDate)}
         </div>
       </div>
 
@@ -85,7 +85,7 @@ const EmailMetadata: React.FC<EmailMetadataProps> = ({
           Subject:
         </div>
         <div className="email-metadata-value text-black font-medium text-base">
-          {getEmailSubject(email)}
+          {getEmailSubject(currentSelectedEmail)}
         </div>
       </div>
 

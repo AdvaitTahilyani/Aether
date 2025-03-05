@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { EmailDetails } from "../../types";
 import { safeGetEmailBody } from "./SafeEmailBody";
-
+import { useEmailStore } from "../../store/email";
 interface EmailBodyProps {
   email: EmailDetails;
   index: number;
@@ -10,23 +10,27 @@ interface EmailBodyProps {
 }
 
 const EmailBody: React.FC<EmailBodyProps> = ({
-  email,
   index,
   isFirstEmail,
   iframeRef,
 }) => {
+  const { currentSelectedEmail } = useEmailStore();
   const [iframeHeight, setIframeHeight] = useState<number>(0); // Start with 0 height
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const [emailContent, setEmailContent] = useState<string>("");
-  const [iframeKey, setIframeKey] = useState<string>(`email-iframe-${email.id || index}-${Date.now()}`);
+  const [iframeKey, setIframeKey] = useState<string>(
+    `email-iframe-${currentSelectedEmail?.id || index}-${Date.now()}`
+  );
 
   // Get email content when email changes
   useEffect(() => {
-    const content = safeGetEmailBody(email);
+    const content = safeGetEmailBody(currentSelectedEmail);
     setEmailContent(content);
     // Force iframe re-render with a new key
-    setIframeKey(`email-iframe-${email.id || index}-${Date.now()}`);
-  }, [email, index]);
+    setIframeKey(
+      `email-iframe-${currentSelectedEmail?.id || index}-${Date.now()}`
+    );
+  }, [currentSelectedEmail, index]);
 
   // Function to render HTML content in iframe
   const renderEmailInIframe = (
@@ -98,11 +102,11 @@ const EmailBody: React.FC<EmailBodyProps> = ({
     const updateIframeHeight = () => {
       try {
         if (!iframeDoc.body) return;
-        
+
         const bodyHeight = iframeDoc.body.scrollHeight;
         const htmlHeight = iframeDoc.documentElement.scrollHeight;
         const contentHeight = Math.max(bodyHeight, htmlHeight);
-        
+
         // Set a reasonable maximum height to prevent excessive scrolling
         // Limit to 60% of viewport height to ensure we don't create excessive scrolling
         const maxHeight = Math.min(contentHeight, window.innerHeight * 0.6);
@@ -122,7 +126,7 @@ const EmailBody: React.FC<EmailBodyProps> = ({
     }
 
     // Also listen for window resize events
-    window.addEventListener('resize', updateIframeHeight);
+    window.addEventListener("resize", updateIframeHeight);
   };
 
   // Effect to render email in iframe when content changes
@@ -130,7 +134,7 @@ const EmailBody: React.FC<EmailBodyProps> = ({
     // Use a small timeout to ensure the iframe is in the DOM
     const timeoutId = setTimeout(() => {
       const iframe = document.getElementById(
-        `email-iframe-${email.id || index}`
+        `email-iframe-${currentSelectedEmail?.id || index}`
       ) as HTMLIFrameElement;
 
       if (iframe && emailContent) {
@@ -144,7 +148,7 @@ const EmailBody: React.FC<EmailBodyProps> = ({
       if (resizeObserverRef.current) {
         resizeObserverRef.current.disconnect();
       }
-      window.removeEventListener('resize', () => {});
+      window.removeEventListener("resize", () => {});
     };
   }, [emailContent, iframeKey]);
 
@@ -152,13 +156,13 @@ const EmailBody: React.FC<EmailBodyProps> = ({
     <div className="email-content text-gray-700 text-base leading-relaxed m-0 p-0">
       <iframe
         key={iframeKey}
-        id={`email-iframe-${email.id || index}`}
+        id={`email-iframe-${currentSelectedEmail?.id || index}`}
         ref={isFirstEmail && iframeRef ? iframeRef : null}
         className="w-full border-none"
         style={{
-          height: iframeHeight > 0 ? `${iframeHeight}px` : 'auto',
-          minHeight: '100px', // Provide a minimum height
-          maxHeight: '60vh', // Limit maximum height to 60% of viewport height
+          height: iframeHeight > 0 ? `${iframeHeight}px` : "auto",
+          minHeight: "100px", // Provide a minimum height
+          maxHeight: "60vh", // Limit maximum height to 60% of viewport height
           width: "100%",
           overflow: "auto",
           margin: 0,

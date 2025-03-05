@@ -18,10 +18,6 @@ import AutoReplyGenerator from "./AutoReplyGenerator";
 import NoEmailSelected from "./viewer-components/NoEmailSelected";
 import { useEmailStore } from "../store/email";
 
-interface EmailViewerProps {
-  userEmail?: string;
-}
-
 // Add this type at the top of your file
 type TimeoutId = ReturnType<typeof setTimeout>;
 
@@ -102,8 +98,8 @@ export const safeGetEmailBody = (email: EmailDetails | null): string => {
   }
 };
 
-function EmailViewer({ userEmail = "user@example.com" }: EmailViewerProps) {
-  const { currentSelectedEmail } = useEmailStore();
+function EmailViewer() {
+  const { userEmail, currentSelectedEmail } = useEmailStore();
   const [threadEmails, setThreadEmails] = useState<EmailDetails[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -499,7 +495,7 @@ function EmailViewer({ userEmail = "user@example.com" }: EmailViewerProps) {
           onReplyGenerated={(reply) =>
             handleReplyGenerated(mostRecentEmail.id!, reply)
           }
-          userEmail={userEmail}
+          userEmail={userEmail as string}
         />
       );
     }
@@ -637,7 +633,6 @@ function EmailViewer({ userEmail = "user@example.com" }: EmailViewerProps) {
       {/* Reply/Forward Form Modal */}
       {showReplyForm && (
         <ComposeEmail
-          userEmail={userEmail}
           onClose={handleCancelReply}
           onSent={handleReplySuccess}
           isReply={replyingToId !== null}

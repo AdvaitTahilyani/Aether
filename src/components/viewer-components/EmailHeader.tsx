@@ -10,20 +10,20 @@ import {
 } from "../../services";
 import EmailSummarizer from "../EmailSummarizer";
 import { safeGetEmailBody } from "./SafeEmailBody";
+import { useEmailStore } from "../../store/email";
 
 interface EmailHeaderProps {
-  selectedEmail: EmailDetails;
   threadEmails: EmailDetails[];
   onReply: () => void;
   isReplying: boolean;
 }
 
 const EmailHeader: React.FC<EmailHeaderProps> = ({
-  selectedEmail,
   threadEmails,
   onReply,
   isReplying,
 }) => {
+  const { currentSelectedEmail } = useEmailStore();
   const [miniSummary, setMiniSummary] = useState<string | null>(null);
   const [loadingSummary, setLoadingSummary] = useState<boolean>(false);
 
@@ -31,7 +31,7 @@ const EmailHeader: React.FC<EmailHeaderProps> = ({
   const subject =
     threadEmails.length > 0
       ? getEmailSubject(threadEmails[0])
-      : getEmailSubject(selectedEmail);
+      : getEmailSubject(currentSelectedEmail);
 
   // Get unique participants in the thread
   const getUniqueParticipants = () => {

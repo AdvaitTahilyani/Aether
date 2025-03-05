@@ -1,20 +1,18 @@
-// src/App.tsx
 import "./index.css";
-import "./transitions.css"; // Make sure this file exists
-import "./email.css"; // Import email-specific styles
+import "./transitions.css";
+import "./email.css";
 import { useState, useEffect } from "react";
 import EmailDashboard from "./pages/EmailDashboard";
 import {
   isElectronAPIAvailable,
   validateElectronAPI,
 } from "./services/electronService";
-
+import { useEmailStore } from "./store/email";
 function App() {
-  const [email, setEmail] = useState<string | null>(null);
+  const { userEmail, setUserEmail } = useEmailStore();
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true); // Start with loading true
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [apiAvailable, setApiAvailable] = useState<boolean>(false);
-  const [pingResult, setPingResult] = useState<string | null>(null);
 
   // Check if Electron API is available and check auth status on component mount
   useEffect(() => {
@@ -25,13 +23,10 @@ function App() {
 
         if (isValid) {
           try {
-            const result = await window.electronAPI!.ping();
-            setPingResult(result);
-
             // Check if user is already authenticated
             const userEmail = await window.electronAPI!.checkAuthStatus();
             if (userEmail) {
-              setEmail(userEmail);
+              setUserEmail(userEmail);
             }
           } catch (err) {
             console.error("API error:", err);
@@ -63,7 +58,7 @@ function App() {
       }
 
       const userEmail = await window.electronAPI!.loginWithGoogle();
-      setEmail(userEmail);
+      setUserEmail(userEmail);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Unknown error occurred";
@@ -80,16 +75,16 @@ function App() {
       if (isElectronAPIAvailable()) {
         await window.electronAPI!.logout();
       }
-      setEmail(null);
+      setUserEmail(null);
     } catch (err) {
       console.error("Error during logout:", err);
-      setEmail(null);
+      setUserEmail(null);
     }
   };
 
   // If user is logged in, show the dashboard
-  if (email) {
-    return <EmailDashboard userEmail={email} onLogout={handleLogout} />;
+  if (userEmail) {
+    return <EmailDashboard onLogout={handleLogout} />;
   }
 
   // Show loading spinner while checking auth status
@@ -98,7 +93,7 @@ function App() {
       <div className="app-container flex items-center justify-center min-h-screen bg-[#0A0A0A] text-white">
         <div className="flex flex-col items-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mb-4"></div>
-          <p className="text-lg">Loading...</p>
+          <p>Loading...</p>
         </div>
       </div>
     );
@@ -107,9 +102,6 @@ function App() {
   // Otherwise, show the login screen
   return (
     <>
-      {/* Add this invisible draggable region */}
-      <div className="titlebar-drag-region"></div>
-
       <div className="app-container flex items-center justify-center min-h-screen bg-[#0A0A0A] text-white p-8">
         <div className="max-w-lg w-full bg-white/10 backdrop-blur-lg rounded-2xl p-10 shadow-2xl border border-white/20">
           <div className="text-center">
@@ -130,37 +122,18 @@ function App() {
               Your personal AI mail + assistant
             </p>
 
-            {/* API Status Indicator */}
-            <div className="mb-6 text-base">
-              <span
-                className={`inline-block w-4 h-4 rounded-full mr-2 ${
-                  apiAvailable ? "bg-green-500" : "bg-red-500"
-                }`}
-              ></span>
-              Electron API: {apiAvailable ? "Available" : "Not Available"}
-              {pingResult && (
-                <div className="mt-2">Ping test: {pingResult}</div>
-              )}
-            </div>
-
             {/* Login button */}
             <button
               onClick={handleGoogleLogin}
               disabled={isLoading || !apiAvailable}
               className="w-full py-4 px-8 bg-white text-indigo-900 rounded-lg text-lg font-medium flex items-center justify-center gap-3 hover:bg-white/90 transition-colors duration-300 shadow-lg no-drag disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? (
-                <span className="animate-pulse">Connecting...</span>
-              ) : (
-                <>
-                  <img
-                    src="/icons/google-icon.svg"
-                    alt="Google Icon"
-                    className="w-6 h-6"
-                  />
-                  Login with Google
-                </>
-              )}
+              <img
+                src="/icons/google-icon.svg"
+                alt="Google Icon"
+                className="w-6 h-6"
+              />
+              Login with Google
             </button>
 
             {/* Display error message if login fails */}

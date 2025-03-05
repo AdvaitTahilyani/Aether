@@ -1,4 +1,3 @@
-import React from "react";
 import { EmailDetails } from "../types";
 import {
   getEmailSubject,
@@ -7,13 +6,16 @@ import {
   decodeBase64,
 } from "../services";
 import EmailSummarizer from "./EmailSummarizer";
+import { useEmailStore } from "../store/email";
+import NoEmailSelected from "./viewer-components/NoEmailSelected";
 
-interface EmailDetailProps {
-  email: EmailDetails;
-  onBack?: () => void;
-}
+const EmailDetail = () => {
+  const { currentSelectedEmail } = useEmailStore();
 
-const EmailDetail: React.FC<EmailDetailProps> = ({ email }) => {
+  if (!currentSelectedEmail) {
+    return <NoEmailSelected />;
+  }
+
   // Extract raw email content without sanitization (WARNING: SECURITY RISK)
   const getRawEmailBody = (email: EmailDetails): string => {
     try {
@@ -49,7 +51,7 @@ const EmailDetail: React.FC<EmailDetailProps> = ({ email }) => {
   };
 
   // Get raw unsanitized email content
-  const emailBody = getRawEmailBody(email);
+  const emailBody = getRawEmailBody(currentSelectedEmail);
 
   // Determine if content is HTML
   const isHtml = /<[a-z][\s\S]*>/i.test(emailBody);
@@ -59,21 +61,23 @@ const EmailDetail: React.FC<EmailDetailProps> = ({ email }) => {
       {/* Email header */}
       <div className="mb-4">
         <h2 className="text-2xl font-bold text-black mb-4">
-          {getEmailSubject(email)}
+          {getEmailSubject(currentSelectedEmail)}
         </h2>
         <div className="flex justify-between items-center">
           <div>
-            <p className="text-black text-lg">From: {getEmailSender(email)}</p>
+            <p className="text-black text-lg">
+              From: {getEmailSender(currentSelectedEmail)}
+            </p>
             <p className="text-black text-sm mt-1">To: You</p>
           </div>
           <span className="text-sm text-gray-600">
-            {formatDate(email.internalDate)}
+            {formatDate(currentSelectedEmail.internalDate)}
           </span>
         </div>
       </div>
 
       {/* AI Summary */}
-      <EmailSummarizer email={email} />
+      <EmailSummarizer email={currentSelectedEmail} />
 
       {/* Email body */}
       <div className="flex-1 overflow-auto">

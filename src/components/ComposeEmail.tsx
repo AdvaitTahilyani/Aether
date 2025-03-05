@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import { isElectronAPIAvailable } from "../services";
 import { EmailDetails } from "../types";
-import { getEmailSender, getEmailSubject, parseEmailAddress, getEmailRecipients } from "../services";
+import {
+  getEmailSender,
+  getEmailSubject,
+  parseEmailAddress,
+  getEmailRecipients,
+} from "../services";
 import AutoReplyGenerator from "./AutoReplyGenerator";
-
+import { useEmailStore } from "../store/email";
 interface ComposeEmailProps {
-  userEmail?: string;
   onClose: () => void;
   onSent?: () => void;
   // Reply-specific props
@@ -18,7 +22,6 @@ interface ComposeEmailProps {
 }
 
 const ComposeEmail: React.FC<ComposeEmailProps> = ({
-  userEmail,
   onClose,
   onSent,
   isReply = false,
@@ -27,17 +30,18 @@ const ComposeEmail: React.FC<ComposeEmailProps> = ({
   replyToAddress,
   isForward = false,
 }) => {
-  const [to, setTo] = useState(isReply && replyToAddress ? replyToAddress : '');
+  const { userEmail } = useEmailStore();
+  const [to, setTo] = useState(isReply && replyToAddress ? replyToAddress : "");
   const [cc, setCc] = useState<string>("");
   const [bcc, setBcc] = useState<string>("");
   const [showCc, setShowCc] = useState<boolean>(false);
   const [showBcc, setShowBcc] = useState<boolean>(false);
   const [subject, setSubject] = useState(
-    isReply && replyToSubject 
-      ? `Re: ${replyToSubject.replace(/^Re: /i, '')}` 
-      : isForward && replyToSubject 
-        ? `Fwd: ${replyToSubject.replace(/^Fwd: /i, '')}` 
-        : ''
+    isReply && replyToSubject
+      ? `Re: ${replyToSubject.replace(/^Re: /i, "")}`
+      : isForward && replyToSubject
+      ? `Fwd: ${replyToSubject.replace(/^Fwd: /i, "")}`
+      : ""
   );
   const [body, setBody] = useState<string>("");
   const [suggestedReply, setSuggestedReply] = useState<string | null>(null);
@@ -45,7 +49,8 @@ const ComposeEmail: React.FC<ComposeEmailProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState<string>("Checking API...");
   const [isAiReplyActive, setIsAiReplyActive] = useState<boolean>(false);
-  const [isCheckingStoredReply, setIsCheckingStoredReply] = useState<boolean>(isReply);
+  const [isCheckingStoredReply, setIsCheckingStoredReply] =
+    useState<boolean>(isReply);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Helper function to create a consistent key for storing replies
@@ -82,35 +87,35 @@ const ComposeEmail: React.FC<ComposeEmailProps> = ({
       }
 
       console.log("Final recipient email:", recipientEmail);
-      
+
       // Set the recipient for reply only, not for forward
       if (isReply) {
         setTo(recipientEmail);
       }
-      
+
       // Set the subject with appropriate prefix
       const originalSubject = getEmailSubject(replyToEmail);
       let newSubject = originalSubject;
-      
+
       if (isReply) {
-        newSubject = originalSubject.startsWith("Re:") 
-          ? originalSubject 
+        newSubject = originalSubject.startsWith("Re:")
+          ? originalSubject
           : `Re: ${originalSubject}`;
       } else if (isForward) {
-        newSubject = originalSubject.startsWith("Fwd:") 
-          ? originalSubject 
+        newSubject = originalSubject.startsWith("Fwd:")
+          ? originalSubject
           : `Fwd: ${originalSubject}`;
       }
-      
+
       setSubject(newSubject);
 
       // For forwarding, include the original email content
       if (isForward) {
         const originalSender = getEmailSender(replyToEmail);
-        const originalDate = replyToEmail.internalDate 
-          ? new Date(parseInt(replyToEmail.internalDate)).toLocaleString() 
+        const originalDate = replyToEmail.internalDate
+          ? new Date(parseInt(replyToEmail.internalDate)).toLocaleString()
           : "Unknown date";
-        
+
         const forwardedContent = `
 ---------- Forwarded message ---------
 From: ${originalSender}
@@ -132,7 +137,12 @@ ${replyToEmail.snippet || ""}
 
   // Check if a stored reply exists for this email
   const checkStoredReply = async () => {
-    if (!replyToEmail || !replyToEmail.id || !isElectronAPIAvailable() || !window.electronAPI?.storeGet) {
+    if (
+      !replyToEmail ||
+      !replyToEmail.id ||
+      !isElectronAPIAvailable() ||
+      !window.electronAPI?.storeGet
+    ) {
       return;
     }
 
@@ -140,13 +150,13 @@ ${replyToEmail.snippet || ""}
       setIsCheckingStoredReply(true);
       const storeKey = getReplyStoreKey(replyToEmail.id);
       const storedReply = await window.electronAPI.storeGet(storeKey);
-      
+
       if (storedReply) {
-        console.log('Using stored reply for email:', replyToEmail.id);
+        console.log("Using stored reply for email:", replyToEmail.id);
         handleReplyGenerated(storedReply);
       }
     } catch (err) {
-      console.error('Error checking stored reply:', err);
+      console.error("Error checking stored reply:", err);
     } finally {
       setIsCheckingStoredReply(false);
     }
@@ -196,7 +206,7 @@ ${replyToEmail.snippet || ""}
         subject,
         body,
         isHtml: false, // Set to true if you want to send HTML emails
-        threadId: isReply && replyToEmail ? replyToEmail.threadId : undefined
+        threadId: isReply && replyToEmail ? replyToEmail.threadId : undefined,
       });
 
       if (!result || !result.success) {
@@ -210,8 +220,8 @@ ${replyToEmail.snippet || ""}
       onClose();
     } catch (err) {
       setSending(false);
-      setError('Failed to send email. Please try again.');
-      console.error('Error sending email:', err);
+      setError("Failed to send email. Please try again.");
+      console.error("Error sending email:", err);
     }
   };
 
@@ -219,8 +229,8 @@ ${replyToEmail.snippet || ""}
   const handleReplyGenerated = (reply: string) => {
     // Only set the suggested reply if we don't already have one
     if (!suggestedReply) {
-      if (process.env.NODE_ENV === 'development') {
-        console.debug('Reply generated:', reply);
+      if (process.env.NODE_ENV === "development") {
+        console.debug("Reply generated:", reply);
       }
       setSuggestedReply(reply);
       setBody(reply);
@@ -232,7 +242,7 @@ ${replyToEmail.snippet || ""}
   // Handle key events in the textarea
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // If Tab is pressed and AI reply is active, keep the reply and deactivate AI mode
-    if (e.key === 'Tab' && isAiReplyActive) {
+    if (e.key === "Tab" && isAiReplyActive) {
       e.preventDefault();
       setIsAiReplyActive(false);
       if (textareaRef.current) {
@@ -244,23 +254,25 @@ ${replyToEmail.snippet || ""}
     }
 
     // If Escape is pressed and AI reply is active, clear the reply
-    if (e.key === 'Escape' && isAiReplyActive) {
+    if (e.key === "Escape" && isAiReplyActive) {
       e.preventDefault();
-      setBody('');
+      setBody("");
       setIsAiReplyActive(false);
       return;
     }
 
     // If any other key is pressed (except for navigation keys), deactivate AI mode
-    if (isAiReplyActive &&
-        e.key !== 'ArrowUp' &&
-        e.key !== 'ArrowDown' &&
-        e.key !== 'ArrowLeft' &&
-        e.key !== 'ArrowRight' &&
-        e.key !== 'Home' &&
-        e.key !== 'End' &&
-        e.key !== 'PageUp' &&
-        e.key !== 'PageDown') {
+    if (
+      isAiReplyActive &&
+      e.key !== "ArrowUp" &&
+      e.key !== "ArrowDown" &&
+      e.key !== "ArrowLeft" &&
+      e.key !== "ArrowRight" &&
+      e.key !== "Home" &&
+      e.key !== "End" &&
+      e.key !== "PageUp" &&
+      e.key !== "PageDown"
+    ) {
       // Let the default behavior happen (user typing will replace the selected text)
       setIsAiReplyActive(false);
     }
@@ -284,13 +296,16 @@ ${replyToEmail.snippet || ""}
         </div>
 
         {/* Auto-reply generator (invisible component) - only generate if we don't have a stored reply */}
-        {isReply && replyToEmail && !isCheckingStoredReply && !suggestedReply && (
-          <AutoReplyGenerator 
-            email={replyToEmail} 
-            onReplyGenerated={handleReplyGenerated} 
-            userEmail={userEmail}
-          />
-        )}
+        {isReply &&
+          replyToEmail &&
+          !isCheckingStoredReply &&
+          !suggestedReply && (
+            <AutoReplyGenerator
+              email={replyToEmail}
+              onReplyGenerated={handleReplyGenerated}
+              userEmail={userEmail as string}
+            />
+          )}
 
         {/* Form */}
         <form
@@ -306,7 +321,10 @@ ${replyToEmail.snippet || ""}
 
           {/* To Field */}
           <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <label htmlFor="to" className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+            <label
+              htmlFor="to"
+              className="block text-sm text-gray-600 dark:text-gray-400 mb-1"
+            >
               To
             </label>
             <input
@@ -343,7 +361,10 @@ ${replyToEmail.snippet || ""}
           {/* CC Field (Optional) */}
           {showCc && (
             <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-              <label htmlFor="cc" className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+              <label
+                htmlFor="cc"
+                className="block text-sm text-gray-600 dark:text-gray-400 mb-1"
+              >
                 Cc
               </label>
               <div className="flex">
@@ -369,7 +390,10 @@ ${replyToEmail.snippet || ""}
           {/* BCC Field (Optional) */}
           {showBcc && (
             <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-              <label htmlFor="bcc" className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+              <label
+                htmlFor="bcc"
+                className="block text-sm text-gray-600 dark:text-gray-400 mb-1"
+              >
                 Bcc
               </label>
               <div className="flex">
@@ -426,11 +450,13 @@ ${replyToEmail.snippet || ""}
                 onKeyDown={handleKeyDown}
                 placeholder="Write your message here..."
                 className={`w-full h-full min-h-[300px] p-4 rounded resize-none focus:outline-none focus:ring-1 focus:ring-blue-500 border border-gray-300 dark:border-gray-600
-                  ${isAiReplyActive 
-                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' 
-                    : 'bg-white dark:bg-[#333333] text-gray-700 dark:text-white'}`}
+                  ${
+                    isAiReplyActive
+                      ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+                      : "bg-white dark:bg-[#333333] text-gray-700 dark:text-white"
+                  }`}
               ></textarea>
-              
+
               {/* Tab instruction - only visible when AI reply is active */}
               {isAiReplyActive && (
                 <div className="absolute top-3 right-3 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs px-2 py-1 rounded-full shadow-sm z-30">

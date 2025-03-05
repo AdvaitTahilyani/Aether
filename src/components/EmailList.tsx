@@ -19,12 +19,11 @@ import {
 } from "./icons";
 
 interface EmailListProps {
-  emails: EmailDetails[];
   loading: boolean;
   error: string | null;
-  onRefresh: () => void; // Add callback to refresh emails after deletion
-  onPermissionError?: () => void; // Add callback for permission errors
-  category?: EmailCategory; // Add category prop
+  onSelectEmail: (email: EmailDetails | null) => void;
+  onRefresh: () => void;
+  category?: EmailCategory;
 }
 
 // Helper function to safely check if an email has valid headers
@@ -38,30 +37,33 @@ const hasValidHeaders = (email: EmailDetails): boolean => {
 };
 
 const EmailList: React.FC<EmailListProps> = ({
-  emails,
   loading,
   error,
+  onSelectEmail,
   onRefresh,
-  onPermissionError,
-  category = "inbox", // Default to inbox
+  category = "inbox",
 }) => {
-  const { currentSelectedEmail, setCurrentSelectedEmail } = useEmailStore();
+  const { currentSelectedEmail, emailList } = useEmailStore();
   // Debug: Log emails when they change
 
-  const handleSelectEmail = (email: EmailDetails) => {
-    if (currentSelectedEmail && currentSelectedEmail.id === email.id) {
-      setCurrentSelectedEmail(null);
+  const handleSelectEmail = (email: EmailDetails | null) => {
+    if (currentSelectedEmail && currentSelectedEmail.id === email?.id) {
+      onSelectEmail(null);
     } else {
-      setCurrentSelectedEmail(email);
+      onSelectEmail(email);
     }
   };
   useEffect(() => {
-    console.log(`EmailList received ${category} emails:`, emails);
-    if (emails.length > 0) {
+    console.log(`EmailList received ${category} emails:`, emailList);
+    if (emailList.length > 0) {
       // Log the structure of the first email for debugging
+      console.log(
+        "First email structure:",
+        JSON.stringify(emailList[0], null, 2)
+      );
 
       // Check if essential fields are present
-      const missingFields = emails.filter(
+      const missingFields = emailList.filter(
         (email) => !email.id || !email.threadId || !hasValidHeaders(email)
       );
 
@@ -73,15 +75,15 @@ const EmailList: React.FC<EmailListProps> = ({
 
       // Check if we can extract subjects and senders
       try {
-        const firstSubject = getEmailSubject(emails[0]);
-        const firstSender = getEmailSender(emails[0]);
+        const firstSubject = getEmailSubject(emailList[0]);
+        const firstSender = getEmailSender(emailList[0]);
         console.log("First email subject:", firstSubject);
         console.log("First email sender:", firstSender);
       } catch (err) {
         console.error("Error extracting email metadata:", err);
       }
     }
-  }, [emails, category]);
+  }, [emailList, category]);
 
   // State for active tag filter
   const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
@@ -102,19 +104,19 @@ const EmailList: React.FC<EmailListProps> = ({
   // Initialize starredEmails set from the emails prop
   useEffect(() => {
     const initialStarredEmails = new Set<string>();
-    emails.forEach((email) => {
+    emailList.forEach((email) => {
       if (email.labelIds?.includes("STARRED")) {
         initialStarredEmails.add(email.id);
       }
     });
     setStarredEmails(initialStarredEmails);
-  }, [emails]);
+  }, [emailList]);
 
   // Extract all unique tags/labels from emails with custom priority order
   const allTags = useMemo(() => {
     const tagSet = new Set<string>();
 
-    emails.forEach((email) => {
+    emailList.forEach((email) => {
       const labels = getEmailLabels(email);
       labels.forEach((label) => {
         // Skip the Inbox tag as it's the default view
@@ -152,14 +154,14 @@ const EmailList: React.FC<EmailListProps> = ({
       // If same priority, sort alphabetically
       return a.localeCompare(b);
     });
-  }, [emails]);
+  }, [emailList]);
 
   // Group emails by thread ID
   const groupedEmails = useMemo(() => {
     const threadMap = new Map<string, EmailDetails[]>();
 
     // Group emails by threadId
-    emails.forEach((email) => {
+    emailList.forEach((email) => {
       const threadId = email.threadId || email.id;
       if (!threadMap.has(threadId)) {
         threadMap.set(threadId, []);
@@ -192,7 +194,7 @@ const EmailList: React.FC<EmailListProps> = ({
         parseInt(b.latestEmail.internalDate || "0") -
         parseInt(a.latestEmail.internalDate || "0")
     );
-  }, [emails]);
+  }, [emailList]);
 
   // Filter threads based on active tag
   const filteredThreads = useMemo(() => {
@@ -313,18 +315,7 @@ const EmailList: React.FC<EmailListProps> = ({
       let needsRelogin = false;
 
       if (error instanceof Error) {
-        if (error.message.includes("Insufficient Permission")) {
-          errorMessage =
-            "You don't have permission to delete emails. Please log out and log in again with the required permissions.";
-          needsRelogin = true;
-
-          // Notify parent component about permission error
-          if (onPermissionError) {
-            onPermissionError();
-          }
-        } else {
-          errorMessage = error.message;
-        }
+        errorMessage = error.message;
       }
 
       setDeleteStatus({
@@ -417,18 +408,7 @@ const EmailList: React.FC<EmailListProps> = ({
       let needsRelogin = false;
 
       if (error instanceof Error) {
-        if (error.message.includes("Insufficient Permission")) {
-          errorMessage =
-            "You don't have permission to modify emails. Please log out and log in again with the required permissions.";
-          needsRelogin = true;
-
-          // Notify parent component about permission error
-          if (onPermissionError) {
-            onPermissionError();
-          }
-        } else {
-          errorMessage = error.message;
-        }
+        errorMessage = error.message;
       }
 
       setDeleteStatus({
@@ -528,6 +508,9 @@ const EmailList: React.FC<EmailListProps> = ({
         return "Inbox";
     }
   };
+
+  // Use emailList from the store instead of the prop
+  const emails = emailList;
 
   return (
     <div className="overflow-auto max-h-[calc(100vh-120px)]">

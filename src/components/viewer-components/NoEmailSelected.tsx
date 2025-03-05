@@ -1,6 +1,4 @@
-import React from "react";
-
-const NoEmailSelected: React.FC = () => {
+export default function NoEmailSelected() {
   return (
     <div className="h-full flex items-center justify-center bg-[#121212] text-white">
       <div className="max-w-md w-full px-8 py-12 rounded-xl bg-[#1E1E1E] border border-white/10 shadow-2xl backdrop-blur-sm flex flex-col items-center text-center">
@@ -55,6 +53,4 @@ const NoEmailSelected: React.FC = () => {
       </div>
     </div>
   );
-};
-
-export default NoEmailSelected;
+}
