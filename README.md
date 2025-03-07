@@ -1,4 +1,4 @@
-# Aether
+# Rift
 
 A modern Electron application with properly separated main and renderer processes.
 

@@ -1,92 +1,20 @@
 // main.ts
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, shell } from "electron";
 import path from "path";
-import { google } from "googleapis";
-import { OAuth2Client } from "google-auth-library";
-import http from "http";
-import url from "url";
-import dotenv from "dotenv";
 import fs from "fs";
+import dotenv from "dotenv";
 import { EmailService } from "../src/services/api/email-service";
 import { registerGmailHandlers } from "../src/services/ipcMain/gmail";
 import { initDb } from "./database";
+import { authenticate, SCOPES } from "./auth/google-auth";
+import { store } from "./store";
+
 // Import our ServerManager
 const ServerManager = require("../../server/server_manager");
 const serverManager = new ServerManager();
 
 // Load environment variables from .env file
 dotenv.config();
-
-// Define Gmail API scopes (permissions we need from the user)
-// VERY BROAD SCOPES - FOR TESTING ONLY.  Reduce to minimum required scopes after testing.
-const SCOPES = [
-  "https://mail.google.com/", // Full access
-  "https://www.googleapis.com/auth/gmail.readonly",
-  "https://www.googleapis.com/auth/gmail.modify",
-  "https://www.googleapis.com/auth/gmail.compose",
-  "https://www.googleapis.com/auth/gmail.send",
-  "https://www.googleapis.com/auth/gmail.insert",
-  "https://www.googleapis.com/auth/gmail.labels",
-  "https://www.googleapis.com/auth/gmail.settings.basic",
-  "https://www.googleapis.com/auth/gmail.settings.sharing",
-];
-
-// Simple storage implementation using a JSON file
-class SimpleStore {
-  private storePath: string;
-  private data: Record<string, any> = {};
-
-  constructor() {
-    this.storePath = path.join(app.getPath("userData"), "store.json");
-    this.loadData();
-  }
-
-  private loadData() {
-    try {
-      if (fs.existsSync(this.storePath)) {
-        const fileContent = fs.readFileSync(this.storePath, "utf8");
-        this.data = JSON.parse(fileContent);
-        console.log("Store data loaded successfully");
-      } else {
-        console.log("No store file found, creating a new one");
-        this.data = {};
-        this.saveData();
-      }
-    } catch (error) {
-      console.error("Error loading store data:", error);
-      this.data = {};
-    }
-  }
-
-  private saveData() {
-    try {
-      fs.writeFileSync(
-        this.storePath,
-        JSON.stringify(this.data, null, 2),
-        "utf8"
-      );
-    } catch (error) {
-      console.error("Error saving store data:", error);
-    }
-  }
-
-  get(key: string): any {
-    return this.data[key];
-  }
-
-  set(key: string, value: any) {
-    this.data[key] = value;
-    this.saveData();
-  }
-
-  delete(key: string) {
-    delete this.data[key];
-    this.saveData();
-  }
-}
-
-// Initialize our simple store
-export const store = new SimpleStore();
 
 // Store the window reference globally to prevent garbage collection
 let mainWindow: BrowserWindow | null = null;
@@ -138,6 +66,7 @@ function createWindow() {
     transparent: true, // Enables transparency for custom UI effects
     backgroundColor: "#00000000", // Fully transparent background
     vibrancy: "under-window", // macOS vibrancy effect for a blurred background
+    icon: path.join(__dirname, "../../public/app-icons/rift-icons.png"), // App icon for taskbar/dock
     webPreferences: {
       nodeIntegration: false, // Secure: Disable Node.js in renderer
       contextIsolation: true, // Secure: Enable context isolation
@@ -189,176 +118,11 @@ function createWindow() {
 }
 
 /**
- * Loads OAuth client secrets from environment variables (.env file).
- * Ensures credentials are not hard-coded or stored in a JSON file.
- * @returns {{ client_id: string; client_secret: string; redirect_uris: string[] }}
- */
-function loadClientSecrets(): {
-  client_id: string;
-  client_secret: string;
-  redirect_uris: string[];
-} {
-  const client_id = process.env.GOOGLE_CLIENT_ID;
-  const client_secret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirect_uris = [
-    process.env.GOOGLE_REDIRECT_URI || "http://localhost:3000/oauth2callback",
-  ];
-
-  if (!client_id || !client_secret) {
-    throw new Error(
-      "GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET not set in .env file"
-    );
-  }
-
-  return { client_id, client_secret, redirect_uris };
-}
-
-/**
- * Authenticates with Google using stored tokens or initiates a new OAuth flow.
- * Handles token refresh if existing tokens are expired.
- */
-export async function authenticate(): Promise<OAuth2Client> {
-  // Create OAuth client with credentials from environment variables
-  const oAuth2Client = new OAuth2Client({
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    redirectUri: "http://localhost:3000/oauth2callback",
-  });
-
-  // Check if we have stored tokens
-  const tokens = store.get("googleToken");
-  if (tokens) {
-    console.log("Using stored tokens");
-    oAuth2Client.setCredentials(tokens);
-
-    // Check if token is expired and needs refresh
-    const expiryDate = tokens.expiry_date;
-    const now = Date.now();
-    if (expiryDate && now > expiryDate) {
-      console.log("Token expired, refreshing...");
-      try {
-        const refreshedTokens = await oAuth2Client.refreshAccessToken();
-        oAuth2Client.setCredentials(refreshedTokens.credentials);
-        store.set("googleToken", refreshedTokens.credentials);
-        console.log("Token refreshed successfully");
-      } catch (error) {
-        console.error("Error refreshing token:", error);
-        // If refresh fails, clear tokens and get new ones
-        store.delete("googleToken");
-        return getNewToken();
-      }
-    }
-    return oAuth2Client;
-  }
-
-  // No tokens found, get new ones
-  console.log("No tokens found, starting new authentication flow");
-  return getNewToken();
-}
-
-/**
- * Obtains a new OAuth token by prompting the user to log in via their browser.
- * Sets up a local server to capture the authorization code and exchange it for tokens.
- * Uses a dynamic port to avoid conflicts with other services.
- * @returns {Promise<OAuth2Client>} The authenticated client with new tokens
- */
-async function getNewToken(): Promise<OAuth2Client> {
-  // Try to find an available port starting from 3000
-  const findAvailablePort = async (startPort: number): Promise<number> => {
-    return new Promise((resolve) => {
-      const server = http.createServer();
-      server.on("error", () => {
-        // Port is in use, try the next one
-        resolve(findAvailablePort(startPort + 1));
-      });
-      server.listen(startPort, () => {
-        server.close(() => {
-          resolve(startPort);
-        });
-      });
-    });
-  };
-
-  const port = await findAvailablePort(3000);
-  console.log(`Using port ${port} for OAuth callback server`);
-
-  // Get the client secrets from the environment
-  const { client_id, client_secret } = loadClientSecrets();
-
-  // Update the redirect URI with the available port
-  const redirectUri = `http://localhost:${port}/oauth2callback`;
-  // Create a new OAuth2Client with the updated redirect URI
-  const updatedOAuth2Client = new google.auth.OAuth2(
-    client_id,
-    client_secret,
-    redirectUri
-  );
-
-  const authUrl = updatedOAuth2Client.generateAuthUrl({
-    access_type: "offline", // Ensures a refresh token is provided
-    scope: SCOPES,
-  });
-
-  // Open the authentication URL in the user's default browser
-  mainWindow?.webContents.executeJavaScript(
-    `window.open('${authUrl}', '_blank')`
-  );
-
-  // Return a promise that resolves when the token is obtained
-  return new Promise((resolve, reject) => {
-    const server = http
-      .createServer(async (req, res) => {
-        if (req.url?.startsWith("/oauth2callback")) {
-          const qs = new url.URL(req.url, `http://localhost:${port}`)
-            .searchParams;
-          const code = qs.get("code");
-          res.end("Authentication successful! You can close this window.");
-          server.close();
-
-          if (code) {
-            try {
-              const { tokens } = await updatedOAuth2Client.getToken(code);
-              updatedOAuth2Client.setCredentials(tokens);
-              // Store tokens securely using electron-store
-              store.set("googleToken", tokens);
-              resolve(updatedOAuth2Client);
-            } catch (error: unknown) {
-              const errorMessage =
-                error instanceof Error ? error.message : String(error);
-              reject(new Error(`Token exchange failed: ${errorMessage}`));
-            }
-          } else {
-            reject(new Error("No authorization code received"));
-          }
-        }
-      })
-      .listen(port, (err?: Error) => {
-        if (err) {
-          console.error(`Server failed to start: ${err.message}`);
-          reject(new Error(`Server failed to start: ${err.message}`));
-        } else {
-          console.log(`OAuth callback server listening on port ${port}`);
-        }
-      });
-
-    // Add a timeout to prevent hanging if the user doesn't complete the auth flow
-    setTimeout(() => {
-      try {
-        server.close();
-        reject(new Error("Authentication timed out after 5 minutes"));
-      } catch {
-        // Server might already be closed, ignore any errors
-      }
-    }, 5 * 60 * 1000); // 5 minutes timeout
-  });
-}
-
-/**
  * Creates an EmailService instance with the authenticated client
  * @returns {Promise<EmailService>} Initialized EmailService
  */
 export async function createEmailService(): Promise<EmailService> {
-  const auth = await authenticate();
+  const auth = await authenticate(mainWindow);
   return new EmailService(auth);
 }
 
@@ -434,6 +198,13 @@ ipcMain.handle("llama:server-logs", () => {
 // Create window when app is ready
 app.whenReady().then(() => {
   initDb();
+
+  // Set the dock icon for macOS
+  if (process.platform === "darwin") {
+    app.dock.setIcon(
+      path.join(__dirname, "../../public/app-icons/rift-icons.png")
+    );
+  }
 
   // Register IPC handlers
   registerGmailHandlers();

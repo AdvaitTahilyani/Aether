@@ -1,6 +1,6 @@
-# AI Server for Email Summarization
+# Llama 3 Server for Rift
 
-This server provides AI capabilities for the Aether email client, including email summarization using the Llama 3 model via Ollama.
+This server provides AI capabilities for the Rift email client, including email summarization using the Llama 3 model via Ollama.
 
 ## Prerequisites
 

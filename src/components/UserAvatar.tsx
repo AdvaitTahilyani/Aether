@@ -65,7 +65,7 @@ function UserAvatar({ onLogout }: UserAvatarProps) {
         <div className="absolute right-0 mt-3 w-64 bg-indigo-900 rounded-lg shadow-xl border border-white/20 overflow-hidden z-50 animate-fadeIn">
           <div className="p-4 border-b border-white/20">
             <p className="font-medium text-base break-all">{userEmail}</p>
-            <p className="text-sm text-white/60 mt-1">Aether Mail</p>
+            <p className="text-sm text-white/60 mt-1">Rift Mail</p>
           </div>
           <button
             onClick={() => {

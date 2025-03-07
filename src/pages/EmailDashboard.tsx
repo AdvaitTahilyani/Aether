@@ -216,7 +216,16 @@ function EmailDashboard({ onLogout }: EmailDashboardProps) {
       {/* Header with app title, search bar, and user avatar */}
       <header className="bg-white/10 backdrop-blur-lg p-6 border-b border-white/30 flex justify-between items-center">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-semibold tracking-tight">Aether</h1>
+          <div className="flex items-center gap-2">
+            <div className="bg-white/10 p-2 rounded-full flex items-center justify-center">
+              <img
+                src="/rift.svg"
+                alt="Rift Logo"
+                className="h-6 w-6 rounded-full"
+              />
+            </div>
+            <h1 className="text-2xl font-semibold tracking-tight">Rift</h1>
+          </div>
         </div>
         <div className="flex-grow flex justify-center">
           <SearchBar onSearchResults={handleSearchResults} />

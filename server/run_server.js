@@ -10,7 +10,7 @@ const pythonExecutable = process.platform === "win32" ? "python" : "python3";
 const appPath = path.join(__dirname, "app.py");
 
 // Create a log file
-const logPath = path.join(os.tmpdir(), "aether-flask-server.log");
+const logPath = path.join(os.tmpdir(), "rift-flask-server.log");
 const logStream = fs.createWriteStream(logPath, { flags: "a" });
 
 console.log("Starting Flask server...");

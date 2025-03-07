@@ -1,5 +1,6 @@
 import { ipcMain } from "electron";
-import { createEmailService, store } from "../../../electron/main";
+import { createEmailService } from "../../../electron/main";
+import { store } from "../../../electron/store";
 /**
  * IPC handler to fetch a list of recent emails after authentication.
  * Demonstrates Gmail API usage with the stored token.

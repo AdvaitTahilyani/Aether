@@ -10,7 +10,7 @@ const pythonExecutable = process.platform === "win32" ? "python" : "python3";
 const requirementsPath = path.join(__dirname, "requirements.txt");
 
 // Create a log file
-const logPath = path.join(os.tmpdir(), "aether-install-dependencies.log");
+const logPath = path.join(os.tmpdir(), "rift-install-dependencies.log");
 const logStream = fs.createWriteStream(logPath, { flags: "a" });
 
 console.log("Installing Python dependencies...");

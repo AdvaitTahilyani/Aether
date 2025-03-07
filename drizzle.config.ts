@@ -7,8 +7,8 @@ export default defineConfig({
   dialect: "sqlite",
   dbCredentials: {
     // For development: use a path relative to the project folder
-    url: path.join(__dirname, "aether-cache.db"),
+    url: path.join(__dirname, "rift-cache.db"),
     // For production (commented out): switch to appData path
-    // url: `${process.env.HOME}/Library/Application Support/aether-client/aether-cache.db`, // macOS path
+    // url: `${process.env.HOME}/Library/Application Support/rift-client/rift-cache.db`, // macOS path
   },
 });

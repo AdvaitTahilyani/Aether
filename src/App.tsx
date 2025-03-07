@@ -108,19 +108,15 @@ function App() {
             {/* Logo/Icon */}
             <div className="mx-auto w-28 h-28 bg-white/20 rounded-full flex items-center justify-center mb-8">
               <img
-                src="/icons/mail-icon.svg"
-                alt="Mail Icon"
-                className="w-14 h-14"
+                src="/rift.svg"
+                alt="Rift Logo"
+                className="w-16 h-16 rounded-full"
               />
             </div>
 
-            <h1 className="text-5xl font-bold mb-3 tracking-tight">
-              Welcome to Aether
-            </h1>
+            <h1 className="text-4xl font-bold mb-4">Welcome to Rift</h1>
 
-            <p className="text-2xl text-white/80 mb-10">
-              Your personal AI mail + assistant
-            </p>
+            <p className="text-lg mb-8">Your intelligent email assistant</p>
 
             {/* Login button */}
             <button

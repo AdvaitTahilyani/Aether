@@ -6,10 +6,10 @@ import { chmodSync, existsSync, mkdirSync } from "fs";
 import { threads, emails, drafts, actions } from "./schema";
 import path from "path";
 
-// Use a relative path in the project folder for development
-const devDbPath = path.join(__dirname, "aether-cache.db"); // Places db in the same folder as this file
-// For production, you can switch to this:
-// const prodDbPath = `${app.getPath("appData")}/aether-client/aether-cache.db`;
+// Determine the database path based on the environment
+const isDevelopment = process.env.NODE_ENV === "development";
+const devDbPath = path.join(__dirname, "rift-cache.db"); // Places db in the same folder as this file
+const prodDbPath = path.join(app.getPath("userData"), "rift-cache.db"); // Places db in the app's user data folder
 
 // Use devDbPath for now (swap to prodDbPath later)
 const dbPath = devDbPath;
