@@ -26,16 +26,6 @@ interface EmailListProps {
   category?: EmailCategory;
 }
 
-// Helper function to safely check if an email has valid headers
-const hasValidHeaders = (email: EmailDetails): boolean => {
-  return !!(
-    email &&
-    email.payload &&
-    Array.isArray(email.payload.headers) &&
-    email.payload.headers.length > 0
-  );
-};
-
 const EmailList: React.FC<EmailListProps> = ({
   loading,
   error,
@@ -46,44 +36,48 @@ const EmailList: React.FC<EmailListProps> = ({
   const { currentSelectedEmail, emailList } = useEmailStore();
   // Debug: Log emails when they change
 
-  const handleSelectEmail = (email: EmailDetails | null) => {
-    if (currentSelectedEmail && currentSelectedEmail.id === email?.id) {
-      onSelectEmail(null);
-    } else {
-      onSelectEmail(email);
+  // Track emails that have been marked as read during this session
+  const [markedAsRead, setMarkedAsRead] = useState<Set<string>>(new Set());
+
+  // Function to mark an email as read
+  const markEmailAsRead = async (emailId: string) => {
+    try {
+      // Skip if we don't have the API or if already marked as read
+      if (!window.electronAPI?.markEmailAsRead || markedAsRead.has(emailId)) {
+        return;
+      }
+
+      // Call the API to mark as read
+      const result = await window.electronAPI.markEmailAsRead(emailId);
+      if (result) {
+        console.log(`Email ${emailId} marked as read`);
+        setMarkedAsRead((prev) => new Set([...prev, emailId]));
+
+        // Refresh the email list to update the UI
+        // We use a slight delay to ensure the API has time to update
+        setTimeout(() => {
+          onRefresh();
+        }, 500);
+      }
+    } catch (error) {
+      console.error("Failed to mark email as read:", error);
     }
   };
-  useEffect(() => {
-    console.log(`EmailList received ${category} emails:`, emailList);
-    if (emailList.length > 0) {
-      // Log the structure of the first email for debugging
-      console.log(
-        "First email structure:",
-        JSON.stringify(emailList[0], null, 2)
-      );
 
-      // Check if essential fields are present
-      const missingFields = emailList.filter(
-        (email) => !email.id || !email.threadId || !hasValidHeaders(email)
-      );
+  const handleSelectEmail = (email: EmailDetails | null) => {
+    if (currentSelectedEmail && currentSelectedEmail.id === email?.id) {
+      // If clicking the already selected email, deselect it
+      onSelectEmail(null);
+    } else {
+      // Otherwise, select the new email
+      onSelectEmail(email);
 
-      if (missingFields.length > 0) {
-        console.warn(
-          `${missingFields.length} emails are missing essential fields`
-        );
-      }
-
-      // Check if we can extract subjects and senders
-      try {
-        const firstSubject = getEmailSubject(emailList[0]);
-        const firstSender = getEmailSender(emailList[0]);
-        console.log("First email subject:", firstSubject);
-        console.log("First email sender:", firstSender);
-      } catch (err) {
-        console.error("Error extracting email metadata:", err);
+      // Mark the email as read when selected
+      if (email && email.labelIds?.includes("UNREAD")) {
+        markEmailAsRead(email.id);
       }
     }
-  }, [emailList, category]);
+  };
 
   // State for active tag filter
   const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
@@ -610,9 +604,19 @@ const EmailList: React.FC<EmailListProps> = ({
                       } transition-all duration-300`}
                     >
                       <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-medium truncate pr-3 text-lg">
-                          {getEmailSubject(latestEmail)}
-                        </h3>
+                        <div className="flex items-center gap-2">
+                          {/* Unread indicator */}
+                          {latestEmail.labelIds?.includes("UNREAD") &&
+                            !markedAsRead.has(latestEmail.id) && (
+                              <div
+                                className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse"
+                                title="Unread email"
+                              ></div>
+                            )}
+                          <h3 className="font-medium truncate pr-3 text-lg">
+                            {getEmailSubject(latestEmail)}
+                          </h3>
+                        </div>
                         <div className="flex items-center gap-2">
                           {/* Star button */}
                           <button

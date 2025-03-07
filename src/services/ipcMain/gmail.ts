@@ -22,22 +22,8 @@ export function registerGmailHandlers() {
     }
   });
 
-  ipcMain.handle("sync-emails", async () => {
-    const emailService = await createEmailService();
-    if (!emailService) {
-      throw new Error(
-        "Failed to create email service - authentication may have failed"
-      );
-    }
-
-    const gmailEmails = await emailService.getEmails(100);
-  });
-
   ipcMain.handle("get-emails", async (_, maxResults = 10, query?: string) => {
     try {
-      console.log(
-        `Fetching up to ${maxResults} emails with query: ${query || "none"}`
-      );
       const emailService = await createEmailService();
 
       if (!emailService) {
@@ -47,7 +33,6 @@ export function registerGmailHandlers() {
       }
 
       const emails = await emailService.getEmails(maxResults, query);
-      console.log(`Successfully fetched ${emails.length} emails`);
 
       // Validate the email objects
       const validEmails = emails.filter(
@@ -66,7 +51,6 @@ export function registerGmailHandlers() {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       console.error(`Failed to fetch emails: ${errorMessage}`);
-      console.error(error); // Log the full error object for debugging
       throw new Error(`Failed to fetch emails: ${errorMessage}`);
     }
   });
@@ -78,7 +62,6 @@ export function registerGmailHandlers() {
         throw new Error("Email ID is required");
       }
 
-      console.log(`Fetching details for email ${emailId}...`);
       const emailService = await createEmailService();
 
       if (!emailService) {
@@ -94,15 +77,10 @@ export function registerGmailHandlers() {
         throw new Error(`Invalid email details returned for ID: ${emailId}`);
       }
 
-      console.log(`Successfully fetched details for email ${emailId}`);
       return emailDetails;
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      console.error(
-        `Failed to fetch email details for ${emailId}: ${errorMessage}`
-      );
-      console.error(error); // Log the full error object for debugging
       throw new Error(`Failed to fetch email details: ${errorMessage}`);
     }
   });
@@ -114,9 +92,6 @@ export function registerGmailHandlers() {
         throw new Error("Thread ID is required");
       }
 
-      console.log(
-        `Fetching up to ${maxResults} emails in thread ${threadId}...`
-      );
       const emailService = await createEmailService();
 
       if (!emailService) {
@@ -128,9 +103,6 @@ export function registerGmailHandlers() {
       const threadEmails = await emailService.getThreadEmails(
         threadId,
         maxResults
-      );
-      console.log(
-        `Successfully fetched ${threadEmails.length} emails in thread ${threadId}`
       );
 
       // Validate the email objects
@@ -145,7 +117,6 @@ export function registerGmailHandlers() {
 
       return validEmails;
     } catch (error) {
-      console.error("Failed to fetch thread emails:", error);
       throw new Error(
         `Failed to fetch thread emails: ${
           error instanceof Error ? error.message : String(error)
@@ -187,7 +158,6 @@ export function registerGmailHandlers() {
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      console.error(`Failed to mark email as read: ${errorMessage}`);
       throw new Error(`Failed to mark email as read: ${errorMessage}`);
     }
   });
@@ -203,6 +173,7 @@ export function registerGmailHandlers() {
     ) => {
       try {
         console.log(`Sending email to ${to} with subject: ${subject}`);
+
         if (threadId) {
           console.log(`Adding to thread: ${threadId}`);
         }
@@ -225,17 +196,10 @@ export function registerGmailHandlers() {
           threadId
         );
 
-        if (result.success) {
-          console.log(`Successfully sent email with ID: ${result.messageId}`);
-        } else {
-          console.error("Failed to send email");
-        }
-
         return result;
       } catch (error: unknown) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
-        console.error(`Failed to send email: ${errorMessage}`);
 
         // Check for specific error types to provide better error messages
         if (errorMessage.includes("insufficient authentication scopes")) {
@@ -261,7 +225,6 @@ export function registerGmailHandlers() {
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      console.error(`Failed to toggle star status: ${errorMessage}`);
 
       // Check for permission errors
       if (
@@ -283,7 +246,6 @@ export function registerGmailHandlers() {
    * Simple ping handler to test IPC connection
    */
   ipcMain.handle("ping", async (_, message) => {
-    console.log("Received ping from renderer:", message);
     return `Pong from main process at ${new Date().toISOString()}`;
   });
 
@@ -292,19 +254,13 @@ export function registerGmailHandlers() {
    */
   ipcMain.handle("test-gmail-connection", async () => {
     try {
-      console.log("Testing Gmail API connection...");
       const emailService = await createEmailService();
       const isConnected = await emailService.testConnection();
-      console.log(
-        `Gmail API connection test result: ${
-          isConnected ? "Success" : "Failed"
-        }`
-      );
+
       return isConnected;
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      console.error(`Gmail API connection test error: ${errorMessage}`);
       return false;
     }
   });
@@ -314,7 +270,6 @@ export function registerGmailHandlers() {
    */
   ipcMain.handle("search-emails", async (_, query) => {
     try {
-      console.log(`Searching emails with query: ${query}`);
       const emailService = await createEmailService();
 
       if (!emailService) {
@@ -327,11 +282,9 @@ export function registerGmailHandlers() {
       const emailIds = await emailService.getEmails(50, query);
 
       if (!emailIds || emailIds.length === 0) {
-        console.log("No emails found matching the query");
+        console.error("No emails found matching the query");
         return [];
       }
-
-      console.log(`Found ${emailIds.length} emails matching the query`);
 
       // Get details for each email (limited to first 20 for performance)
       const maxToFetch = Math.min(emailIds.length, 20);
@@ -353,7 +306,7 @@ export function registerGmailHandlers() {
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      console.error(`Failed to search emails: ${errorMessage}`);
+
       throw new Error(`Failed to search emails: ${errorMessage}`);
     }
   });

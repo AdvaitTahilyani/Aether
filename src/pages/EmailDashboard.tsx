@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { EmailDetails } from "../types";
-import { createFallbackEmail } from "../services";
 import EmailList from "../components/EmailList";
 import EmailViewer from "../components/EmailViewer";
 import UserAvatar from "../components/UserAvatar";
@@ -30,7 +29,6 @@ function EmailDashboard({ onLogout }: EmailDashboardProps) {
   const startWidthRef = useRef<number>(33);
 
   const {
-    userEmail,
     emailList,
     currentSelectedEmail,
     setCurrentSelectedEmail,
@@ -79,8 +77,6 @@ function EmailDashboard({ onLogout }: EmailDashboardProps) {
           return await window.electronAPI!.getEmailDetails(email.id);
         } catch (err) {
           console.error(`Error fetching details for email ${email.id}:`, err);
-          // Return a fallback object if details fetch fails
-          return createFallbackEmail(email);
         }
       });
 
